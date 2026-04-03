@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, spyOn } from "bun:test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { JoseJWKSRepository } from "./jose-jwks-repository";
 
@@ -7,14 +7,14 @@ const JWKS_URL = `https://${DOMAIN}/.well-known/jwks.json`;
 
 const TEST_KEYS: JsonWebKey[] = [{ kty: "RSA", n: "test-n", e: "AQAB" }];
 
-let fetchSpy: ReturnType<typeof spyOn>;
+let fetchSpy: ReturnType<typeof vi.spyOn>;
 
 const mockFetch = (response: Response) => {
-  fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(response);
+  fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
 };
 
 const mockFetchError = (error: Error) => {
-  fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(error);
+  fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(error);
 };
 
 const jsonResponse = (body: unknown, status = 200) =>

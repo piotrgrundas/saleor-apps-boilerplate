@@ -1,6 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import react from "@vitejs/plugin-react";
+import { build as viteBuild } from "vite-plus";
+
 export const DIST_DIR = path.resolve("dist");
 export const APPS_DIR = path.resolve("src/apps");
 
@@ -39,24 +42,34 @@ export async function buildClient(app: AppEntry, options: { minify: boolean; nod
   const outdir = path.join(DIST_DIR, app.name, "assets");
   fs.mkdirSync(outdir, { recursive: true });
 
-  const result = await Bun.build({
-    entrypoints: [app.entryPath],
-    outdir,
-    target: "browser",
-    format: "esm",
-    splitting: true,
-    minify: options.minify,
-    naming: "[name].[ext]",
+  await viteBuild({
+    configFile: false,
+    root: process.cwd(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- plugin types mismatch with Vite+ remapped core
+    plugins: [react() as any],
+    resolve: {
+      alias: {
+        "@": path.resolve("src"),
+      },
+    },
     define: {
       "process.env.NODE_ENV": JSON.stringify(options.nodeEnv),
     },
+    build: {
+      outDir: outdir,
+      emptyOutDir: true,
+      minify: options.minify ? "esbuild" : false,
+      cssCodeSplit: false,
+      rollupOptions: {
+        input: app.entryPath,
+        output: {
+          entryFileNames: "entry-client.js",
+          assetFileNames: "entry-client[extname]",
+        },
+      },
+    },
+    logLevel: "warn",
   });
-
-  if (!result.success) {
-    console.error(`Client build failed for app "${app.name}":`);
-    for (const log of result.logs) console.error(log);
-    process.exit(1);
-  }
 
   console.log(`  ${app.name} → ${outdir}`);
 }

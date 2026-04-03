@@ -1,16 +1,8 @@
 import { createConsola } from "consola";
 
 import type { Logger } from "@/application/domain/services/logger";
+import { LOG_LEVEL_MAP, type LogLevel } from "./types";
 import { redactSensitive } from "./utils";
-
-export type LogLevel = "debug" | "info" | "warn" | "error";
-
-const LOG_LEVEL_MAP: Record<LogLevel, number> = {
-  error: 0,
-  warn: 1,
-  info: 3,
-  debug: 4,
-};
 
 export class ConsolaLogger implements Logger {
   private __consola: ReturnType<typeof createConsola>;
@@ -25,20 +17,24 @@ export class ConsolaLogger implements Logger {
     return this.__tag ? this.__consola.withTag(this.__tag) : this.__consola;
   }
 
+  private __formatMeta(meta?: Record<string, unknown>): Record<string, unknown> | undefined {
+    return meta ? redactSensitive(meta) : undefined;
+  }
+
   debug(message: string, meta?: Record<string, unknown>): void {
-    this.__instance.debug(message, meta ? redactSensitive(meta) : undefined);
+    this.__instance.debug(message, this.__formatMeta(meta));
   }
 
   info(message: string, meta?: Record<string, unknown>): void {
-    this.__instance.info(message, meta ? redactSensitive(meta) : undefined);
+    this.__instance.info(message, this.__formatMeta(meta));
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
-    this.__instance.warn(message, meta ? redactSensitive(meta) : undefined);
+    this.__instance.warn(message, this.__formatMeta(meta));
   }
 
   error(message: string, meta?: Record<string, unknown>): void {
-    this.__instance.error(message, meta ? redactSensitive(meta) : undefined);
+    this.__instance.error(message, this.__formatMeta(meta));
   }
 
   withTag(newTag: string): Logger {

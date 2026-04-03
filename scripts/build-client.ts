@@ -1,4 +1,4 @@
-// Standalone client build (used by `bun run build:client`).
+// Standalone client build (used by `pnpm run build:client`).
 import { buildClient, discoverEntryPoints } from "./build-utils";
 
 const apps = discoverEntryPoints("entry-client.tsx");

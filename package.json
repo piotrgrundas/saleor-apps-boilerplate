@@ -1,23 +1,21 @@
 {
-  "name": "bun-saleor-app-boilerplate",
+  "name": "saleor-app-boilerplate",
   "version": "0.0.1",
-  "author": "Piotr Grundas <piotrgrundas@gmail.com>",
-  "description": "Saleor App Boilerplate using Bun, Hono, and React",
+  "description": "Saleor App Boilerplate using Vite+, Hono, and React",
   "license": "MIT",
+  "author": "Piotr Grundas <piotrgrundas@gmail.com>",
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/serve.ts",
-    "build": "bun run scripts/build.ts",
-    "build:client": "bun run scripts/build-client.ts",
-    "preview": "bun run build && NODE_ENV=production bun dist/handler/entry-server.js",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "format": "biome format --write .",
+    "dev": "concurrently --raw \"tsx watch -r dotenv/config src/serve.ts\" \"tsx scripts/build-client.ts\"",
+    "build": "tsx scripts/build.ts",
+    "build:client": "tsx scripts/build-client.ts",
+    "test": "vp test",
+    "test:watch": "vp test --watch",
+    "check": "vp check",
     "typecheck": "tsc --noEmit",
     "codegen": "graphql-codegen",
-    "codegen:watch": "graphql-codegen --watch"
+    "codegen:watch": "graphql-codegen --watch",
+    "prepare": "vp config"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.985.0",
@@ -43,20 +41,33 @@
     "react-hook-form": "^7.71.1",
     "react-router": "^7.13.0",
     "react-router-dom": "^7.13.0",
+    "tslog": "^4.10.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.14",
     "@graphql-codegen/cli": "^6.1.1",
     "@graphql-codegen/near-operation-file-preset": "^4.0.0",
     "@graphql-codegen/typed-document-node": "^6.1.5",
     "@graphql-codegen/typescript": "^5.0.7",
     "@graphql-codegen/typescript-operations": "^5.0.7",
-    "@types/bun": "^1.3.8",
+    "@types/node": "^22.15.0",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.1.2",
     "dotenv": "^17.2.4",
+    "tsdown": "^0.12.5",
+    "tsx": "^4.19.4",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vite-plus": "latest",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    },
+    "onlyBuiltDependenciesFile": ".pnpm-allowed-builds.json"
   }
 }

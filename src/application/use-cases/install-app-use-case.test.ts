@@ -1,14 +1,14 @@
-import { describe, expect, it } from "vitest";
 import { err, ok } from "neverthrow";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { AppConfigRepository } from "@/application/domain/repositories/app-config-repository";
 import type { JWKSRepository } from "@/application/domain/repositories/jwks-repository";
-import type { SaleorClient } from "@/application/domain/services/saleor-client-service";
+import type { StoreService } from "@/application/domain/services/store-service";
 import {
   createMockAppConfigRepository,
   createMockJwksRepository,
   createMockLogger,
-  createMockSaleorClient,
+  createMockStoreService,
 } from "@/lib/test/mock";
 import { InstallAppUseCase } from "./install-app-use-case";
 
@@ -24,7 +24,7 @@ describe("InstallAppUseCase", () => {
     // given
     const useCase = new InstallAppUseCase(
       createMockAppConfigRepository(),
-      createMockSaleorClient("app-123"),
+      createMockStoreService("app-123"),
       createMockJwksRepository(),
       createMockLogger(),
     );
@@ -41,7 +41,7 @@ describe("InstallAppUseCase", () => {
     const configRepo = createMockAppConfigRepository();
     const useCase = new InstallAppUseCase(
       configRepo,
-      createMockSaleorClient("app-123"),
+      createMockStoreService("app-123"),
       createMockJwksRepository(),
       createMockLogger(),
     );
@@ -64,7 +64,7 @@ describe("InstallAppUseCase", () => {
     // given
     const useCase = new InstallAppUseCase(
       createMockAppConfigRepository(),
-      createMockSaleorClient("app-123"),
+      createMockStoreService("app-123"),
       createMockJwksRepository(),
       createMockLogger(),
     );
@@ -81,15 +81,15 @@ describe("InstallAppUseCase", () => {
     expect(error.cause).toBeUndefined();
   });
 
-  it("returns INSTALL_APP_FETCH_ID_ERROR when saleor client fails", async () => {
+  it("returns INSTALL_APP_FETCH_ID_ERROR when store service fails", async () => {
     // given
-    const failingClient: SaleorClient = {
-      getAppId: async () =>
-        err({ code: "SALEOR_CLIENT_REQUEST_ERROR", message: "connection refused" }),
+    const failingService: StoreService = {
+      ...createMockStoreService(),
+      getAppId: async () => err({ code: "STORE_REQUEST_ERROR", message: "connection refused" }),
     };
     const useCase = new InstallAppUseCase(
       createMockAppConfigRepository(),
-      failingClient,
+      failingService,
       createMockJwksRepository(),
       createMockLogger(),
     );
@@ -101,7 +101,7 @@ describe("InstallAppUseCase", () => {
     const error = result._unsafeUnwrapErr();
     expect(error.code).toBe("INSTALL_APP_FETCH_ID_ERROR");
     expect(error.cause).toEqual({
-      code: "SALEOR_CLIENT_REQUEST_ERROR",
+      code: "STORE_REQUEST_ERROR",
       message: "connection refused",
     });
   });
@@ -115,7 +115,7 @@ describe("InstallAppUseCase", () => {
     };
     const useCase = new InstallAppUseCase(
       failingRepo,
-      createMockSaleorClient(),
+      createMockStoreService(),
       createMockJwksRepository(),
       createMockLogger(),
     );
@@ -139,7 +139,7 @@ describe("InstallAppUseCase", () => {
     };
     const useCase = new InstallAppUseCase(
       createMockAppConfigRepository(),
-      createMockSaleorClient(),
+      createMockStoreService(),
       failingJwks,
       createMockLogger(),
     );

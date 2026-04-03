@@ -2,10 +2,10 @@ import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
 import { requestId } from "hono/request-id";
 
+import { initSentry, Sentry } from "@/application/infrastructure/logging/sentry/instrument";
 import { container } from "@/di/container";
 import { createClientEntryPoint } from "@/lib/client/mount";
 import { createErrorHandler } from "@/lib/error/handler";
-import { initSentry, Sentry } from "@/application/infrastructure/logging/sentry/instrument";
 import { createAssetsMiddleware } from "@/lib/middleware/assets-middleware";
 import { healthCheckMiddleware } from "@/lib/middleware/health-check-middleware";
 import { createLoggingMiddleware } from "@/lib/middleware/logging-middleware";

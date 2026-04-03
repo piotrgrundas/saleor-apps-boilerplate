@@ -77,10 +77,7 @@ export class AwsSecretManagerAppConfigRepository implements AppConfigRepository 
     return ok(configMapResult.value[saleorDomain] ?? null);
   }
 
-  async set(
-    saleorDomain: string,
-    config: AppConfig,
-  ): AsyncDomainResult<void, AppConfigErrorCode> {
+  async set(saleorDomain: string, config: AppConfig): AsyncDomainResult<void, AppConfigErrorCode> {
     const configMapResult = await this.__getConfigMap();
     if (configMapResult.isErr()) return err(configMapResult.error);
 

@@ -1,9 +1,10 @@
-FROM oven/bun:1 AS base
+FROM node:22-slim AS base
 WORKDIR /app
+RUN corepack enable
 
 # Install dependencies
-COPY package.json bun.lockb* ./
-RUN bun install --frozen-lockfile
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source
 COPY . .
@@ -11,17 +12,15 @@ COPY . .
 # Development
 FROM base AS development
 EXPOSE 3000
-CMD ["bun", "--hot", "src/serve.ts"]
+CMD ["pnpm", "run", "dev"]
 
 # Build
 FROM base AS build
-RUN bun run build
+RUN pnpm run build
 
 # Production
-FROM oven/bun:1-slim AS production
+FROM node:22-slim AS production
 WORKDIR /app
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./package.json
 EXPOSE 3000
-CMD ["bun", "run", "dist/handler/entry-server.js"]
+CMD ["node", "dist/handler/entry-server.js"]

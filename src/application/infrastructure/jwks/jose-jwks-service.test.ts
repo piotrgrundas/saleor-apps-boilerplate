@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vite-plus/test";
 import { exportJWK, FlattenedSign, generateKeyPair } from "jose";
 import { err, ok } from "neverthrow";
 

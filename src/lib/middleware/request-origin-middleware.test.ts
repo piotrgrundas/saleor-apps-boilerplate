@@ -1,8 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createTestApp } from "@/lib/test/app";
 import { createTestRequest } from "@/lib/test/request";
-
 import { requestOriginMiddleware } from "./request-origin-middleware";
 
 function createApp() {
@@ -39,7 +38,9 @@ describe("requestOriginMiddleware", () => {
     const app = createApp();
 
     // when
-    const res = await app.request(createTestRequest("/test", { headers }));
+    const res = await app.request(
+      createTestRequest("/test", { headers: headers as Record<string, string> }),
+    );
 
     // then
     expect(await res.text()).toBe(expected);

@@ -51,7 +51,7 @@ interface UseCase<TInput, TOutput, TErrorCode extends ErrorCode> {
 ### New Saleor Webhook
 
 1. Add the subscription `.graphql` file in your app's `graphql/saleor/subscriptions/` directory.
-2. Run `bun run codegen` to generate typed document nodes.
+2. Run `pnpm run codegen` to generate typed document nodes.
 3. Create the webhook handler in `apps/{name}/api/rest/saleor/webhooks.ts`.
 4. Register the webhook in the app's Saleor manifest.
 
@@ -73,9 +73,8 @@ interface UseCase<TInput, TOutput, TErrorCode extends ErrorCode> {
 
 ### General
 
-- **Biome** handles formatting and linting. Run `bun run lint:fix` before committing. Don't fight auto-formatting.
+- **Vite+** handles formatting and linting via Oxfmt/Oxlint. Run `vp check --fix` before committing. Don't fight auto-formatting.
 - 2-space indentation, double quotes, semicolons, 100-char line width.
-- Biome auto-sorts imports: Node/Bun builtins first, packages second, then `@/` aliases, then relative paths.
 - Use the `@/` path alias for all imports from `src/`. Never use deep relative paths like `../../../lib/`.
 
 ### TypeScript
@@ -95,7 +94,7 @@ interface UseCase<TInput, TOutput, TErrorCode extends ErrorCode> {
 
 ### Conventions
 
-- Import `{ describe, expect, it, vi }` from **vitest**, not `bun:test`.
+- Import `{ describe, expect, it, vi }` from **`vite-plus/test`**.
 - Structure test bodies with `// given`, `// when`, `// then` comments.
 - All `expect()` calls belong in `// then` (or `// when & then` for one-liners).
 - Use `it.each` with `$desc` template literals for parameterized tests.
@@ -123,12 +122,13 @@ interface UseCase<TInput, TOutput, TErrorCode extends ErrorCode> {
 - Remote Saleor schema types are generated to `src/graphql/saleor/schema.ts`.
 - Operation types are generated next to their `.graphql` files with `.generated.ts` extension.
 - The handler app's custom GraphQL API types are generated from `schema.graphql`.
-- Always run `bun run codegen` after changing `.graphql` files.
-- Generated files (`*.generated.*`, `schema.ts` in `graphql/`) are excluded from Biome.
+- Always run `pnpm run codegen` after changing `.graphql` files.
+- Generated files (`*.generated.*`, `schema.ts` in `graphql/`) are excluded from linting.
 
 ### Saleor Webhook Validation
 
 The `saleorWebhookValidationMiddleware` validates incoming webhook requests:
+
 1. Parses required Saleor headers (`saleor-domain`, `saleor-api-url`, `saleor-event`, `saleor-signature`).
 2. Verifies the JWS signature against Saleor's JWKS endpoint.
 3. Sets `saleorDomain`, `saleorApiUrl`, and `saleorEvent` on the Hono context.
@@ -136,6 +136,7 @@ The `saleorWebhookValidationMiddleware` validates incoming webhook requests:
 ### Config Validation
 
 Each app validates its environment at startup using Zod:
+
 ```typescript
 // apps/{name}/config/schema.ts
 export const appConfigSchema = baseConfigSchema.extend({ ... });
@@ -152,21 +153,22 @@ export const APP_CONFIG = prepareConfig(appConfigSchema);
 
 ### Server Build Externals
 
-Some packages can't be bundled by `Bun.build()` and are kept as bare imports via the `SERVER_EXTERNALS` array in `scripts/build-utils.ts`. Each external has a `reason`:
+Some packages can't be bundled by the server bundler (tsdown) and are kept as bare imports via the `SERVER_EXTERNALS` array in `scripts/build-utils.ts`. Each external has a `reason`:
 
 - **`lambda-provided`** — the package is available in the AWS Lambda runtime (e.g., `@aws-sdk/*`). Not bundled, not installed into the build output.
 - **`install`** — the package fails to bundle (native bindings, dynamic `require()`, etc.). The build script auto-installs it into `dist/{appName}/node_modules/`.
 
 To add a new external:
+
 1. Add an entry to `SERVER_EXTERNALS` in `scripts/build-utils.ts` with the appropriate `reason`.
 2. Ensure the package is in the root `package.json` `dependencies` (the build reads versions from there).
-3. Run `bun run build` — the package will be excluded from the bundle and installed automatically if `reason` is `"install"`.
+3. Run `pnpm run build` — the package will be excluded from the bundle and installed automatically if `reason` is `"install"`.
 
 ## Gotchas
 
 - `@saleor/macaw-ui` `Text` component: no `variant` prop — use `as` + `size` (number).
 - `@cacheable/node-cache` `.get()` doesn't accept a generic — cast the result.
-- `Bun.build()` outputs CSS as a separate file — make sure the HTML template links it.
-- `scripts/` directory uses top-level await and `Bun` globals — it's excluded from `tsc` and Biome.
+- Vite outputs CSS as a separate file — make sure the HTML template links it.
+- `scripts/` directory uses top-level await — it's excluded from `tsc`.
 - The dev server defaults to port 8000, but Docker/production uses port 3000 via `PORT` env var.
 - **Server build externals** — see the `SERVER_EXTERNALS` array in `scripts/build-utils.ts`.

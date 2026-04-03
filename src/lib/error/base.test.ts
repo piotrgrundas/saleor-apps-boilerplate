@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { DomainError } from "@/application/domain/objects/error";
 import { DomainException, ValidationException } from "./base";

@@ -1,6 +1,10 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vite-plus/test";
 
-import { getFailureEventType, getRequestEventType, getSuccessEventType } from "@/application/infrastructure/saleor/transaction/utils";
+import {
+  getFailureEventType,
+  getRequestEventType,
+  getSuccessEventType,
+} from "@/application/infrastructure/saleor/transaction/utils";
 
 describe("transaction utils", () => {
   it("returns correct success event types", () => {

@@ -5,7 +5,7 @@ import type { AsyncDomainResult } from "@/application/domain/objects/result";
 import type { AppConfigRepository } from "@/application/domain/repositories/app-config-repository";
 import type { JWKSRepository } from "@/application/domain/repositories/jwks-repository";
 import type { Logger } from "@/application/domain/services/logger";
-import type { SaleorClient } from "@/application/domain/services/saleor-client-service";
+import type { StoreService } from "@/application/domain/services/store-service";
 import type { UseCase } from "@/application/domain/use-case";
 import { isDomainAllowed } from "@/lib/utils/allowlist";
 
@@ -19,7 +19,7 @@ export interface InstallAppInput {
 export class InstallAppUseCase implements UseCase<InstallAppInput, void, InstallAppErrorCode> {
   constructor(
     private __appConfigRepository: AppConfigRepository,
-    private __saleorClient: SaleorClient,
+    private __storeService: StoreService,
     private __jwksRepository: JWKSRepository,
     private __logger: Logger,
   ) {}
@@ -36,7 +36,7 @@ export class InstallAppUseCase implements UseCase<InstallAppInput, void, Install
 
     this.__logger.info(`Installing app for domain: ${saleorDomain}`);
 
-    const appIdResult = await this.__saleorClient.getAppId(saleorApiUrl, authToken);
+    const appIdResult = await this.__storeService.getAppId(saleorApiUrl, authToken);
     if (appIdResult.isErr()) {
       this.__logger.error("Failed to fetch app ID from Saleor", {
         saleorDomain,

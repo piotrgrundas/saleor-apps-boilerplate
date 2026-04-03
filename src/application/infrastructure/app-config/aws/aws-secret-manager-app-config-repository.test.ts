@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { AppConfig } from "@/application/domain/objects/app-config";
 import { AwsSecretManagerAppConfigRepository } from "./aws-secret-manager-app-config-repository";
@@ -16,7 +16,7 @@ const OPTIONS = {
 };
 
 const createMockClient = (secretString?: string) => {
-  const sendMock = mock(() =>
+  const sendMock = vi.fn(() =>
     Promise.resolve({
       SecretString: secretString,
     }),
@@ -85,7 +85,7 @@ describe("AwsSecretManagerAppConfigRepository", () => {
       const repo = new AwsSecretManagerAppConfigRepository(OPTIONS);
       // biome-ignore lint/suspicious/noExplicitAny: test override
       (repo as any).__client = {
-        send: mock(() => Promise.reject(new Error("access denied"))),
+        send: vi.fn(() => Promise.reject(new Error("access denied"))),
       };
 
       // when
@@ -117,7 +117,7 @@ describe("AwsSecretManagerAppConfigRepository", () => {
       const repo = new AwsSecretManagerAppConfigRepository(OPTIONS);
       // biome-ignore lint/suspicious/noExplicitAny: test override
       (repo as any).__client = {
-        send: mock(() => {
+        send: vi.fn(() => {
           callCount++;
           if (callCount === 1) return Promise.resolve({ SecretString: "{}" });
           return Promise.reject(new Error("write failed"));

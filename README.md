@@ -1,24 +1,23 @@
-# Bun Saleor App Boilerplate
+# Saleor App Boilerplate
 
-A production-ready Saleor App boilerplate built with **Bun**, **Hono**, and **React 19**. Features clean architecture, multi-app support, type-safe error handling, and AWS-ready deployment.
+A production-ready Saleor App boilerplate built with **Vite+**, **Hono**, and **React 19**. Features clean architecture, multi-app support, type-safe error handling, and AWS-ready deployment.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | [Bun](https://bun.sh) |
-| HTTP Framework | [Hono](https://hono.dev) |
-| Frontend | React 19, React Router 7, [@saleor/macaw-ui](https://github.com/saleor/macaw-ui) |
-| Validation | [Zod v4](https://zod.dev) |
-| Error Handling | [neverthrow](https://github.com/supermacro/neverthrow) (Result types) |
-| Auth | [jose](https://github.com/panva/jose) (JWT/JWK/JWS) |
-| GraphQL | [GraphQL Yoga](https://the-guild.dev/graphql/yoga-server), graphql-codegen |
-| DI | [iti](https://github.com/molszanski/iti) |
-| Secrets | AWS Secrets Manager |
-| Logging | [consola](https://github.com/unjs/consola), [Sentry](https://sentry.io) |
-| Linting/Formatting | [Biome](https://biomejs.dev) |
-| Testing | [Vitest](https://vitest.dev) |
-| Deployment | Docker, AWS Lambda |
+| Layer          | Technology                                                                       |
+| -------------- | -------------------------------------------------------------------------------- |
+| Toolchain      | [Vite+](https://viteplus.dev) (Vite 8, Rolldown, Oxlint, Oxfmt, Vitest)          |
+| HTTP Framework | [Hono](https://hono.dev)                                                         |
+| Frontend       | React 19, React Router 7, [@saleor/macaw-ui](https://github.com/saleor/macaw-ui) |
+| Validation     | [Zod v4](https://zod.dev)                                                        |
+| Error Handling | [neverthrow](https://github.com/supermacro/neverthrow) (Result types)            |
+| Auth           | [jose](https://github.com/panva/jose) (JWT/JWK/JWS)                              |
+| GraphQL        | [GraphQL Yoga](https://the-guild.dev/graphql/yoga-server), graphql-codegen       |
+| DI             | [iti](https://github.com/molszanski/iti)                                         |
+| Secrets        | AWS Secrets Manager                                                              |
+| Logging        | [consola](https://github.com/unjs/consola), [Sentry](https://sentry.io)          |
+| Testing        | [Vitest](https://vitest.dev) (via Vite+)                                         |
+| Deployment     | Docker, AWS Lambda                                                               |
 
 ## Architecture
 
@@ -57,14 +56,14 @@ src/
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) >= 1.0
+- [Vite+](https://viteplus.dev) (manages Node.js and pnpm automatically)
 - [Docker](https://www.docker.com/) (for LocalStack / AWS Secrets Manager locally)
 
 ### Setup
 
 ```bash
 # Install dependencies
-bun install
+vp install
 
 # Copy environment config
 cp .env.example .env
@@ -76,10 +75,11 @@ docker compose up -d localstack
 ./etc/commands/init-aws.sh
 
 # Start the dev server (with hot reload)
-bun dev
+pnpm dev
 ```
 
 The app will be available at `http://localhost:8000`:
+
 - `/` — Handler app (Saleor webhooks, GraphQL, SPA)
 - `/configuration` — Dashboard app (configuration UI)
 - `/health` — Health check endpoint
@@ -95,24 +95,22 @@ docker compose up
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `bun dev` | Start dev server with hot reload |
-| `bun run build` | Build server + client for production |
-| `bun run build:client` | Build client bundles only |
-| `bun run preview` | Build and run in production mode |
-| `bun test` | Run tests |
-| `bun test --watch` | Run tests in watch mode |
-| `bun run lint` | Check linting + formatting (Biome) |
-| `bun run lint:fix` | Auto-fix linting + formatting |
-| `bun run format` | Format all files |
-| `bun run typecheck` | TypeScript type checking |
-| `bun run codegen` | Generate GraphQL types |
-| `bun run codegen:watch` | Generate GraphQL types (watch mode) |
+| Command                  | Description                                 |
+| ------------------------ | ------------------------------------------- |
+| `pnpm dev`               | Start dev server with hot reload            |
+| `pnpm run build`         | Build server + client for production        |
+| `pnpm run build:client`  | Build client bundles only                   |
+| `pnpm run preview`       | Build and run in production mode            |
+| `vp test`                | Run tests                                   |
+| `vp test --watch`        | Run tests in watch mode                     |
+| `vp check`               | Lint, format, and type-check (Oxlint/Oxfmt) |
+| `pnpm run typecheck`     | TypeScript type checking only               |
+| `pnpm run codegen`       | Generate GraphQL types                      |
+| `pnpm run codegen:watch` | Generate GraphQL types (watch mode)         |
 
 ## Build & Deployment
 
-The build system uses `Bun.build()` directly (no Vite). Each app is self-contained under `dist/{appName}/`:
+The build system uses Vite (client) and tsdown (server). Each app is self-contained under `dist/{appName}/`:
 
 ```
 dist/
@@ -127,10 +125,10 @@ dist/
 └── logo.png                  # Public assets
 ```
 
-Build steps (`bun run build`):
+Build steps (`pnpm run build`):
 
-1. **Server** — each `src/apps/*/entry-server.ts` → `dist/{appName}/entry-server.js`
-2. **Client** — each `src/apps/*/entry-client.tsx` → `dist/{appName}/assets/`
+1. **Server** — each `src/apps/*/entry-server.ts` → `dist/{appName}/entry-server.js` (via tsdown)
+2. **Client** — each `src/apps/*/entry-client.tsx` → `dist/{appName}/assets/` (via Vite)
 3. **External deps** — packages that can't be bundled are installed into `dist/{appName}/node_modules/`
 4. **Public** — `public/` is copied to `dist/`
 
@@ -138,11 +136,11 @@ Build steps (`bun run build`):
 
 Some packages are excluded from the server bundle because they use native bindings, dynamic `require()`, or are already provided by the runtime. These are defined in `scripts/build-utils.ts` as `SERVER_EXTERNALS`:
 
-| Package | Reason | Action |
-|---|---|---|
-| `@aws-sdk/client-secrets-manager` | Provided by AWS Lambda runtime | Not bundled, not installed |
-| `@sentry/aws-serverless` | Native bindings | Auto-installed into `dist/{appName}/node_modules/` |
-| `@cacheable/node-cache` | Bundling issues | Auto-installed into `dist/{appName}/node_modules/` |
+| Package                           | Reason                         | Action                                             |
+| --------------------------------- | ------------------------------ | -------------------------------------------------- |
+| `@aws-sdk/client-secrets-manager` | Provided by AWS Lambda runtime | Not bundled, not installed                         |
+| `@sentry/aws-serverless`          | Native bindings                | Auto-installed into `dist/{appName}/node_modules/` |
+| `@cacheable/node-cache`           | Bundling issues                | Auto-installed into `dist/{appName}/node_modules/` |
 
 To add a new external, add an entry to `SERVER_EXTERNALS` with `reason: "lambda-provided"` or `reason: "install"`. The build reads versions from the root `package.json`.
 
@@ -161,18 +159,18 @@ The handler app wraps Hono with a Lambda-compatible handler, so it can be deploy
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|---|---|---|
-| `PORT` | Server port | `3000` |
-| `SALEOR_URL` | Saleor instance URL | — |
-| `LOG_LEVEL` | Logging level (debug, info, warn, error) | `debug` |
-| `AWS_ACCESS_KEY_ID` | AWS access key | — |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | — |
-| `AWS_REGION` | AWS region | `us-east-1` |
-| `SECRET_MANAGER_APP_CONFIG_PATH` | Secrets Manager secret name | `saleor-app-config` |
-| `AWS_ENDPOINT_URL` | Custom AWS endpoint (LocalStack) | — |
-| `SALEOR_UI_APP_TOKEN` | Dashboard token for standalone dev | — |
-| `BASE_PATH` | URL prefix for the app | — |
+| Variable                         | Description                              | Default             |
+| -------------------------------- | ---------------------------------------- | ------------------- |
+| `PORT`                           | Server port                              | `3000`              |
+| `SALEOR_URL`                     | Saleor instance URL                      | —                   |
+| `LOG_LEVEL`                      | Logging level (debug, info, warn, error) | `debug`             |
+| `AWS_ACCESS_KEY_ID`              | AWS access key                           | —                   |
+| `AWS_SECRET_ACCESS_KEY`          | AWS secret key                           | —                   |
+| `AWS_REGION`                     | AWS region                               | `us-east-1`         |
+| `SECRET_MANAGER_APP_CONFIG_PATH` | Secrets Manager secret name              | `saleor-app-config` |
+| `AWS_ENDPOINT_URL`               | Custom AWS endpoint (LocalStack)         | —                   |
+| `SALEOR_UI_APP_TOKEN`            | Dashboard token for standalone dev       | —                   |
+| `BASE_PATH`                      | URL prefix for the app                   | —                   |
 
 ## CI/CD
 

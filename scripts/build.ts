@@ -5,8 +5,11 @@
 // 4. Installs external dependencies into each app
 // 5. Copies public assets
 // 6. Generates package.json for ESM Lambda compatibility
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+
+import { build as tsdownBuild } from "tsdown";
 
 import {
   type AppEntry,
@@ -30,21 +33,20 @@ async function buildServer(app: AppEntry) {
   const outdir = path.join(DIST_DIR, app.name);
   fs.mkdirSync(outdir, { recursive: true });
 
-  const result = await Bun.build({
-    entrypoints: [app.entryPath],
-    outdir,
-    target: "bun",
+  await tsdownBuild({
+    entry: [app.entryPath],
+    outDir: outdir,
     format: "esm",
+    target: "node22",
+    platform: "node",
     minify: true,
-    naming: "[name].[ext]",
     external: SERVER_EXTERNALS.map((e) => e.name),
+    clean: false,
+    dts: false,
+    alias: {
+      "@": path.resolve("src"),
+    },
   });
-
-  if (!result.success) {
-    console.error(`Server build failed for app "${app.name}":`);
-    for (const log of result.logs) console.error(log);
-    process.exit(1);
-  }
 
   console.log(`  ${app.name} → ${outdir}`);
 }
@@ -70,15 +72,10 @@ function installExternals(app: AppEntry) {
     JSON.stringify({ type: "module", dependencies }, null, 2),
   );
 
-  const result = Bun.spawnSync(["bun", "install", "--production"], {
+  execFileSync("pnpm", ["install", "--prod"], {
     cwd: appDir,
     stdio: ["inherit", "inherit", "inherit"],
   });
-
-  if (result.exitCode !== 0) {
-    console.error(`Failed to install externals for app "${app.name}".`);
-    process.exit(1);
-  }
 
   console.log(`  ${app.name} → ${depsToInstall.map((d) => d.name).join(", ")}`);
 }

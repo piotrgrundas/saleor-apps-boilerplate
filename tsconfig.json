@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["bun-types"],
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
       "@/constants": ["./constants.ts"]

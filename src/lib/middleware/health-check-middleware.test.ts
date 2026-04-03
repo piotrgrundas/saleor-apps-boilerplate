@@ -1,8 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createTestApp } from "@/lib/test/app";
 import { createTestRequest } from "@/lib/test/request";
-
 import { healthCheckMiddleware } from "./health-check-middleware";
 
 function createApp() {

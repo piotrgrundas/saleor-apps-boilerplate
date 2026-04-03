@@ -1,13 +1,13 @@
-import { container } from "@/di/container";
-import { createSaleorWebhookValidationMiddleware } from "@/application/infrastructure/saleor/middleware/saleor-webhook-validation-middleware";
-
-const { jwksService } = container.items;
-
 import { Hono } from "hono";
+
+import { createStoreWebhookValidationMiddleware } from "@/application/infrastructure/saleor/middleware/store-webhook-validation-middleware";
+import { container } from "@/di/container";
+
+const { validateWebhook } = container.items;
 
 const webhooks = new Hono();
 
-const webhookValidation = createSaleorWebhookValidationMiddleware(jwksService);
+const webhookValidation = createStoreWebhookValidationMiddleware(validateWebhook);
 
 /**
  * POST /api/saleor/webhooks/product-updated

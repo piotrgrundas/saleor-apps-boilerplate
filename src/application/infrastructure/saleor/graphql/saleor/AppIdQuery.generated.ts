@@ -1,16 +1,15 @@
-import * as Types from '../../../../../graphql/saleor/schema';
+import * as Types from "../../../../../graphql/saleor/schema";
 
-import { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
-export type AppIdQueryVariables = Types.Exact<{ [key: string]: never; }>;
+import { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+export type AppIdQueryVariables = Types.Exact<{ [key: string]: never }>;
 
-
-export type AppIdQuery = { __typename?: 'Query', app?: { __typename?: 'App', id: string } | null };
+export type AppIdQuery = { __typename?: "Query"; app?: { __typename?: "App"; id: string } | null };
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
   implements DocumentTypeDecoration<TResult, TVariables>
 {
-  __apiType?: NonNullable<DocumentTypeDecoration<TResult, TVariables>['__apiType']>;
+  __apiType?: NonNullable<DocumentTypeDecoration<TResult, TVariables>["__apiType"]>;
   private value: string;
   public __meta__?: Record<string, any> | undefined;
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { createServer } from "node:http";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 
@@ -43,7 +43,7 @@ const stopServer = () =>
 
 afterEach(async () => {
   await stopServer();
-  mock.restore();
+  vi.restoreAllMocks();
 });
 
 describe("JoseJWTService", () => {

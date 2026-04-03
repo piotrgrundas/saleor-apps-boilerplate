@@ -1,10 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
 import { ValidationError } from "@/lib/error/base";
 import { createTestApp } from "@/lib/test/app";
 import { createTestRequest } from "@/lib/test/request";
-
 import { zodValidatorMiddleware } from "./zod-validator-middleware";
 
 function createApp() {

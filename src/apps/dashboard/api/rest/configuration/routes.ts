@@ -1,35 +1,31 @@
 import { Hono } from "hono";
 
 import { saleorDomainHeaderSchema } from "@/application/infrastructure/saleor/header/schema";
+import { appSettingsSchema, dashboardAppConfigSchema } from "@/apps/dashboard/config/schema";
 import { container } from "@/di/container";
 import { BadRequestError, NotFoundError } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
-import { appSettingsSchema, dashboardAppConfigSchema } from "@/apps/dashboard/config/schema";
 
 const { appConfigRepository } = container.items;
 
 export const configurationRoutes = new Hono()
-  .get(
-    "/",
-    zodValidatorMiddleware("header", saleorDomainHeaderSchema),
-    async (c) => {
-      const { "saleor-domain": saleorDomain } = c.req.valid("header");
+  .get("/", zodValidatorMiddleware("header", saleorDomainHeaderSchema), async (c) => {
+    const { "saleor-domain": saleorDomain } = c.req.valid("header");
 
-      const result = await appConfigRepository.get(saleorDomain);
+    const result = await appConfigRepository.get(saleorDomain);
 
-      if (result.isErr()) {
-        throw new BadRequestError(result.error.message);
-      }
+    if (result.isErr()) {
+      throw new BadRequestError(result.error.message);
+    }
 
-      if (!result.value) {
-        throw new NotFoundError(`No configuration found for domain: ${saleorDomain}`);
-      }
+    if (!result.value) {
+      throw new NotFoundError(`No configuration found for domain: ${saleorDomain}`);
+    }
 
-      const config = dashboardAppConfigSchema.parse(result.value);
+    const config = dashboardAppConfigSchema.parse(result.value);
 
-      return c.json({ data: config.settings });
-    },
-  )
+    return c.json({ data: config.settings });
+  })
   .post(
     "/",
     zodValidatorMiddleware("header", saleorDomainHeaderSchema),

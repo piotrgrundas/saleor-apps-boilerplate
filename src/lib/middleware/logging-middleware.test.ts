@@ -1,10 +1,9 @@
-import { describe, expect, it } from "vitest";
 import type { Context } from "hono";
+import { describe, expect, it } from "vite-plus/test";
 
-import { createMockLogger } from "@/lib/test/mock";
 import { createTestApp } from "@/lib/test/app";
+import { createMockLogger } from "@/lib/test/mock";
 import { createTestRequest } from "@/lib/test/request";
-
 import { createLoggingMiddleware } from "./logging-middleware";
 
 function createSpyLogger() {

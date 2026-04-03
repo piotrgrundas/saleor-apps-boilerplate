@@ -20,5 +20,5 @@ coverage/
 src/**/generated.ts
 src/graphql/saleor/schema.ts
 
-# Bun
-bun.lockb
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc

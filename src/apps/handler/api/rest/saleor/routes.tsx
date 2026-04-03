@@ -2,13 +2,13 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import pkg from "@/../package.json";
+import { saleorRegisterHeadersSchema } from "@/application/infrastructure/saleor/header/schema";
+import type { SaleorAppManifest } from "@/application/infrastructure/saleor/types";
 import { APP_CONFIG } from "@/apps/handler/config";
 import { ProductUpdatedDocument } from "@/apps/handler/graphql/saleor/subscriptions/ProductUpdateSubscription.generated";
 import { container } from "@/di/container";
 import { BadGatewayException, ForbiddenException } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
-import { saleorRegisterHeadersSchema } from "@/application/infrastructure/saleor/header/schema";
-import type { SaleorAppManifest } from "@/application/infrastructure/saleor/types";
 
 const productUpdatedSubscription = ProductUpdatedDocument.toString();
 

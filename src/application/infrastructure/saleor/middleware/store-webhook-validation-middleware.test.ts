@@ -1,12 +1,11 @@
-import { describe, expect, it } from "vitest";
 import { err, ok } from "neverthrow";
+import { describe, expect, it } from "vite-plus/test";
 
-import type { JWKSService } from "@/application/domain/services/jwks-service";
+import type { ValidateWebhookInput } from "@/application/use-cases/validate-webhook-use-case";
 import { BadRequestError, UnauthorizedError } from "@/lib/error/base";
 import { createTestApp } from "@/lib/test/app";
 import { createTestRequest } from "@/lib/test/request";
-
-import { createSaleorWebhookValidationMiddleware } from "./saleor-webhook-validation-middleware";
+import { createStoreWebhookValidationMiddleware } from "./store-webhook-validation-middleware";
 
 const validHeaders = {
   "saleor-domain": "my-store.saleor.cloud",
@@ -15,19 +14,33 @@ const validHeaders = {
   "saleor-signature": "valid-signature",
 };
 
-function createMockJwksService(verifyResult: "ok" | "err" = "ok"): JWKSService {
+function createMockValidateWebhook(resultType: "ok" | "headers_error" | "signature_error" = "ok") {
   return {
-    async verify() {
-      return verifyResult === "ok"
-        ? ok("verified-payload")
-        : err({ code: "JWKS_VERIFICATION_ERROR" as const, message: "Invalid signature" });
+    execute: async (_input: ValidateWebhookInput) => {
+      if (resultType === "headers_error") {
+        return err({
+          code: "VALIDATE_WEBHOOK_HEADERS_ERROR" as const,
+          message: "Invalid webhook headers",
+        });
+      }
+      if (resultType === "signature_error") {
+        return err({
+          code: "VALIDATE_WEBHOOK_SIGNATURE_ERROR" as const,
+          message: "Invalid webhook signature",
+        });
+      }
+      return ok({
+        domain: "my-store.saleor.cloud",
+        apiUrl: "https://my-store.saleor.cloud/graphql/",
+        event: "ORDER_CREATED",
+      });
     },
   };
 }
 
-function createApp(jwksService: JWKSService) {
+function createApp(validateWebhook: ReturnType<typeof createMockValidateWebhook>) {
   const app = createTestApp();
-  app.use("*", createSaleorWebhookValidationMiddleware(jwksService));
+  app.use("*", createStoreWebhookValidationMiddleware(validateWebhook));
   app.post("/webhook", (c) =>
     c.json({
       domain: c.get("saleorDomain"),
@@ -47,10 +60,10 @@ function createApp(jwksService: JWKSService) {
   return app;
 }
 
-describe("createSaleorWebhookValidationMiddleware", () => {
+describe("createStoreWebhookValidationMiddleware", () => {
   it("sets context values for valid webhook request", async () => {
     // given
-    const app = createApp(createMockJwksService("ok"));
+    const app = createApp(createMockValidateWebhook("ok"));
 
     // when
     const res = await app.request(
@@ -69,48 +82,27 @@ describe("createSaleorWebhookValidationMiddleware", () => {
     expect(body.event).toBe("ORDER_CREATED");
   });
 
-  it.each([
-    { desc: "missing saleor-domain", omit: "saleor-domain" as const },
-    { desc: "missing saleor-event", omit: "saleor-event" as const },
-    { desc: "missing saleor-signature", omit: "saleor-signature" as const },
-  ])("returns 400 when $desc", async ({ omit }) => {
+  it("returns 400 when headers are invalid", async () => {
     // given
-    const app = createApp(createMockJwksService("ok"));
-    const { [omit]: _, ...headers } = validHeaders;
+    const app = createApp(createMockValidateWebhook("headers_error"));
 
     // when
     const res = await app.request(
       createTestRequest("/webhook", {
         method: "POST",
-        headers,
         body: JSON.stringify({}),
       }),
     );
 
     // then
     expect(res.status).toBe(400);
-  });
-
-  it("returns 400 when saleor-api-url is invalid", async () => {
-    // given
-    const app = createApp(createMockJwksService("ok"));
-
-    // when
-    const res = await app.request(
-      createTestRequest("/webhook", {
-        method: "POST",
-        headers: { ...validHeaders, "saleor-api-url": "not-a-url" },
-        body: JSON.stringify({}),
-      }),
-    );
-
-    // then
-    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid webhook headers");
   });
 
   it("returns 401 when signature verification fails", async () => {
     // given
-    const app = createApp(createMockJwksService("err"));
+    const app = createApp(createMockValidateWebhook("signature_error"));
 
     // when
     const res = await app.request(

@@ -6,24 +6,21 @@ import { getElapsedTime } from "@/lib/utils/timing";
 export function createLoggingMiddleware(logger: Logger, meta?: Record<string, unknown>) {
   return createMiddleware(async (c, next) => {
     const elapsed = getElapsedTime();
-    const requestLogger = logger.withTag(c.req.header("x-request-id") ?? "no-request-id");
+    const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
+    const service = meta?.service as string | undefined;
+    const requestLogger = logger.withTag(service ?? "app");
 
     c.set("logger", requestLogger);
 
-    requestLogger.info(`→ ${c.req.method} ${c.req.path}`, {
-      ...meta,
-      method: c.req.method,
-      path: c.req.path,
+    requestLogger.debug(`${c.req.method} → ${c.req.path}`, {
+      requestId,
     });
 
     await next();
 
-    requestLogger.info(`← ${c.req.method} ${c.req.path} ${c.res.status} (${elapsed()}ms)`, {
-      ...meta,
-      method: c.req.method,
-      path: c.req.path,
-      status: c.res.status,
-      duration: elapsed(),
+    requestLogger.debug(`${c.req.method} ← ${c.res.status} ${c.req.path}`, {
+      requestId,
+      duration: `${elapsed()}ms`,
     });
   });
 }

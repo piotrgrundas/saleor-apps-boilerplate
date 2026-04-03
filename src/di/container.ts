@@ -1,11 +1,12 @@
 import { createContainer } from "iti";
 
 import { InstallAppUseCase } from "@/application/use-cases/install-app-use-case";
+import { ValidateWebhookUseCase } from "@/application/use-cases/validate-webhook-use-case";
 import { createAppConfig } from "./factories/app-config";
 import { createJwksRepository, createJwksService } from "./factories/jwks";
 import { createJwtService } from "./factories/jwt";
 import { createLogger } from "./factories/logging";
-import { createSaleorClient } from "./factories/saleor-client";
+import { createStoreService } from "./factories/store-service";
 
 export const container = createContainer()
   .add({
@@ -23,17 +24,20 @@ export const container = createContainer()
   .add({
     appConfigRepository: () => createAppConfig(),
   })
-  .add({
-    saleorClient: () => createSaleorClient(),
-  })
+  .add((ctx) => ({
+    storeService: () => createStoreService(ctx.jwksService),
+  }))
   .add((ctx) => ({
     installApp: () =>
       new InstallAppUseCase(
         ctx.appConfigRepository,
-        ctx.saleorClient,
+        ctx.storeService,
         ctx.jwksRepository,
         ctx.logger,
       ),
+  }))
+  .add((ctx) => ({
+    validateWebhook: () => new ValidateWebhookUseCase(ctx.storeService),
   }));
 
 export type AppContainer = typeof container;
