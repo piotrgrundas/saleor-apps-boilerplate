@@ -5,11 +5,13 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import { err, ok } from "neverthrow";
 
-import type { AppConfig } from "@/domain/app-config/app-config";
-import { appConfigMapSchema } from "@/domain/app-config/app-config";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { AppConfigErrorCode } from "@/domain/errors/scopes/app-config";
 import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
+import {
+  saleorAppConfigMapSchema,
+  type SaleorAppConfig,
+} from "@/infrastructure/integrations/saleor/app-config/schema";
 import { getErrorMessage } from "@/lib/error/helpers";
 
 type AwsSecretManagerOptions = {
@@ -28,7 +30,7 @@ export const createAwsSecretManagerAppConfigRepository = (
   const secretPath = options.secretPath;
 
   const getConfigMap = async (): AsyncResult<
-    Record<string, AppConfig>,
+    Record<string, SaleorAppConfig>,
     AppConfigErrorCode
   > => {
     try {
@@ -40,7 +42,7 @@ export const createAwsSecretManagerAppConfigRepository = (
       }
 
       const parsed = JSON.parse(response.SecretString);
-      const result = appConfigMapSchema.safeParse(parsed);
+      const result = saleorAppConfigMapSchema.safeParse(parsed);
 
       return ok(result.success ? result.data : {});
     } catch (error) {
@@ -55,7 +57,7 @@ export const createAwsSecretManagerAppConfigRepository = (
   };
 
   const saveConfigMap = async (
-    configMap: Record<string, AppConfig>,
+    configMap: Record<string, SaleorAppConfig>,
   ): AsyncResult<void, AppConfigErrorCode> => {
     try {
       const command = new PutSecretValueCommand({

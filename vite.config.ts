@@ -10,6 +10,9 @@ export default defineConfig({
       "@": resolve(__dirname, "src"),
     },
   },
+  test: {
+    exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
+  },
   lint: {
     rules: {
       "no-unused-vars": "error",

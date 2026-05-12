@@ -17,11 +17,9 @@ import { APP_CONFIG } from "./config";
 // Initialize Sentry for error reporting
 initSentry();
 
-const basePath = APP_CONFIG.BASE_PATH;
-
 const logger = container.get("logger");
 
-const app = new Hono().basePath(basePath);
+const app = new Hono().basePath(APP_CONFIG.BASE_PATH as "/");
 
 // Error handler
 app.onError(createErrorHandler(logger));
@@ -29,7 +27,7 @@ app.onError(createErrorHandler(logger));
 // Middleware stack
 app.use("*", requestId());
 app.use("*", createLoggingMiddleware(logger, { service: APP_CONFIG.SERVICE }));
-app.use("*", createAssetsMiddleware(basePath));
+app.use("*", createAssetsMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", publicFilesMiddleware);
 app.use("*", requestOriginMiddleware);
 app.use("*", healthCheckMiddleware);

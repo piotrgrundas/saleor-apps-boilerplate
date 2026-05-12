@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { useLoaderData } from "react-router-dom";
 
 import type { ConfigurationRoutes } from "@/apps/dashboard/api/rest/configuration/routes";
-import { type AppSettings, appSettingsSchema } from "@/apps/dashboard/config/schema";
+import { type AppSettings, appSettingsSchema } from "@/apps/dashboard/app-config";
 
 export const client = hc<ConfigurationRoutes>(`${window.env?.BASE_PATH ?? ""}/api/configuration`);
 

@@ -1,13 +1,11 @@
 import { ok } from "neverthrow";
 import { vi } from "vite-plus/test";
 
-import type { AppConfig } from "@/domain/app-config/app-config";
 import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
+import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
 import type { JWKSRepository } from "@/domain/ports/jwks-repository";
-import type { JWKSService } from "@/domain/ports/jwks-service";
-import type { JWTService } from "@/domain/ports/jwt-service";
 import type { Logger } from "@/domain/ports/logger";
-import type { StoreService } from "@/domain/ports/store-service";
+import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
 
 /**
  * Proxy mock that auto-creates a `vi.fn()` for any accessed property.
@@ -38,7 +36,7 @@ export function createMockLogger(): Logger {
 }
 
 export function createMockAppConfigRepository(
-  initialConfigs: Record<string, AppConfig> = {},
+  initialConfigs: Record<string, SaleorAppConfig> = {},
 ): AppConfigRepository {
   const configs = new Map(Object.entries(initialConfigs));
 
@@ -59,39 +57,25 @@ export function createMockAppConfigRepository(
 
 export function createMockJwksRepository(): JWKSRepository {
   return {
-    async getKeys() {
-      return ok([]);
+    async get() {
+      return ok({ keys: [] });
+    },
+    async set() {
+      return ok(undefined);
     },
   };
 }
 
-export function createMockJwksService(): JWKSService {
+export function createMockJoseAuthService(): JoseAuthService {
   return {
-    async verify() {
-      return ok("");
-    },
-  };
-}
-
-export function createMockJwtService(): JWTService {
-  return {
-    async verify() {
+    async verifyJWT() {
       return ok({});
     },
-  };
-}
-
-export function createMockStoreService(appId = "test-app-id"): StoreService {
-  return {
-    async getAppId() {
-      return ok(appId);
+    async verifyJWS() {
+      return ok("");
     },
-    async verifyWebhook() {
-      return ok({
-        domain: "test.example.com",
-        apiUrl: "https://test.example.com/graphql/",
-        event: "TEST_EVENT",
-      });
+    async verifyJWSDetached() {
+      return ok(undefined);
     },
   };
 }

@@ -18,7 +18,7 @@ coverage/
 
 # Generated
 src/**/generated.ts
-src/graphql/saleor/schema.ts
+src/infrastructure/integrations/saleor/graphql/schema.ts
 
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc

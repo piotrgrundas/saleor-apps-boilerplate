@@ -1,18 +1,16 @@
 import { APP_CONFIG_ERROR_CODES } from "./scopes/app-config";
-import { INSTALL_APP_ERROR_CODES } from "./scopes/install-app";
 import { JWKS_ERROR_CODES } from "./scopes/jwks";
 import { JWT_ERROR_CODES } from "./scopes/jwt";
-import { STORE_ERROR_CODES } from "./scopes/store";
-import { VALIDATE_WEBHOOK_ERROR_CODES } from "./scopes/validate-webhook";
+import { SALEOR_INSTALL_ERROR_CODES } from "./scopes/saleor-install";
+import { SALEOR_ERROR_CODES } from "./scopes/saleor";
 import { VALIDATION_ERROR_CODES } from "./scopes/validation";
 
 export const ErrorCodes = [
   ...APP_CONFIG_ERROR_CODES,
-  ...INSTALL_APP_ERROR_CODES,
   ...JWKS_ERROR_CODES,
   ...JWT_ERROR_CODES,
-  ...STORE_ERROR_CODES,
-  ...VALIDATE_WEBHOOK_ERROR_CODES,
+  ...SALEOR_INSTALL_ERROR_CODES,
+  ...SALEOR_ERROR_CODES,
   ...VALIDATION_ERROR_CODES,
 ] as const;
 

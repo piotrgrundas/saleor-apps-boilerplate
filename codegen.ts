@@ -7,7 +7,7 @@ const config: CodegenConfig = {
   overwrite: true,
   generates: {
     // Saleor remote schema types
-    "src/graphql/saleor/schema.ts": {
+    "src/infrastructure/integrations/saleor/graphql/schema.ts": {
       schema: `${saleorUrl}/graphql/`,
       plugins: ["typescript"],
       config: {
@@ -18,11 +18,11 @@ const config: CodegenConfig = {
     // Saleor operations (near-operation-file)
     "src/": {
       schema: `${saleorUrl}/graphql/`,
-      documents: ["src/**/saleor/**/*.graphql"],
+      documents: ["src/infrastructure/integrations/saleor/graphql/**/*.graphql"],
       preset: "near-operation-file",
       presetConfig: {
         extension: ".generated.ts",
-        baseTypesPath: "graphql/saleor/schema.ts",
+        baseTypesPath: "infrastructure/integrations/saleor/graphql/schema.ts",
       },
       plugins: ["typescript-operations", "typed-document-node"],
       config: {

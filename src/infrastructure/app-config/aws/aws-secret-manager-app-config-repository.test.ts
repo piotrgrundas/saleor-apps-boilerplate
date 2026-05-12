@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, vi } from "vite-plus/test";
 import { it } from "@/lib/test/it";
 
-import type { AppConfig } from "@/domain/app-config/app-config";
+import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
 import { createAwsSecretManagerAppConfigRepository } from "./aws-secret-manager-app-config-repository";
 
 const sendMock = vi.fn();
@@ -18,7 +18,7 @@ vi.mock("@aws-sdk/client-secrets-manager", () => ({
   },
 }));
 
-const TEST_CONFIG: AppConfig = {
+const TEST_CONFIG: SaleorAppConfig = {
   saleorDomain: "test.saleor.cloud",
   authToken: "test-token",
   saleorAppId: "app-123",

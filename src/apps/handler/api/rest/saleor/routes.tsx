@@ -1,16 +1,23 @@
 import { Hono } from "hono";
-import { z } from "zod";
 
 import pkg from "@/../package.json";
-import { saleorRegisterHeadersSchema } from "@/infrastructure/saleor/header/schema";
-import type { SaleorAppManifest } from "@/infrastructure/saleor/types";
-import { APP_CONFIG } from "@/apps/handler/config";
-import { ProductUpdatedDocument } from "@/apps/handler/graphql/saleor/subscriptions/ProductUpdateSubscription.generated";
 import { container } from "@/apps/handler/di/container";
+import { saleorRegisterHeadersSchema } from "@/infrastructure/integrations/saleor/header/schema";
+import { saleorRegisterPayloadSchema } from "@/infrastructure/integrations/saleor/install/schema";
+import { fetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
+import { createSaleorInstall } from "@/infrastructure/integrations/saleor/install/saleor-install";
+import type { SaleorAppManifest } from "@/infrastructure/integrations/saleor/types";
+import { APP_CONFIG } from "@/apps/handler/config";
+import { ProductUpdatedDocument } from "@/infrastructure/integrations/saleor/graphql/ProductUpdateSubscription.generated";
 import { BadGatewayException, ForbiddenException } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 
-const productUpdatedSubscription = ProductUpdatedDocument.toString();
+const saleorInstall = createSaleorInstall({
+  appConfigRepository: container.items.appConfigRepository,
+  fetchAppId: fetchSaleorAppId,
+  jwksRepository: container.items.jwksRepository,
+  logger: container.items.logger,
+});
 
 const routes = new Hono();
 
@@ -39,7 +46,7 @@ routes.get("/manifest", (context) => {
       {
         name: "Product Updated",
         asyncEvents: ["PRODUCT_UPDATED"],
-        query: productUpdatedSubscription,
+        query: ProductUpdatedDocument.toString(),
         targetUrl: `${origin}/api/saleor/webhooks/product-updated`,
         isActive: true,
       },
@@ -56,20 +63,14 @@ routes.get("/manifest", (context) => {
 routes.post(
   "/register",
   zodValidatorMiddleware("header", saleorRegisterHeadersSchema),
-  zodValidatorMiddleware(
-    "json",
-    z.object({
-      auth_token: z.string(),
-    }),
-  ),
+  zodValidatorMiddleware("json", saleorRegisterPayloadSchema),
   async (context) => {
     const { auth_token: authToken } = context.req.valid("json");
-    const installApp = container.get("installAppUseCase");
 
     const { "saleor-domain": saleorDomain, "saleor-api-url": saleorApiUrl } =
       context.req.valid("header");
 
-    const result = await installApp({
+    const result = await saleorInstall({
       saleorDomain,
       saleorApiUrl,
       authToken,
@@ -77,7 +78,7 @@ routes.post(
     });
 
     if (result.isErr()) {
-      if (result.error[0]?.code === "INSTALL_APP_DOMAIN_NOT_ALLOWED_ERROR") {
+      if (result.error[0]?.code === "SALEOR_INSTALL_DOMAIN_NOT_ALLOWED_ERROR") {
         throw new ForbiddenException(result.error);
       }
 

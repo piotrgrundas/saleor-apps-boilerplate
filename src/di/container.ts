@@ -1,10 +1,9 @@
 import { createContainer } from "iti";
 
 import { createAppConfig } from "./factories/app-config";
-import { createJwksRepository, createJwksService } from "./factories/jwks";
-import { createJwtService } from "./factories/jwt";
 import { createLogger } from "./factories/logging";
-import { createStoreService } from "./factories/store-service";
+import { createJoseAuthService } from "@/infrastructure/jose/auth/jose-auth-service";
+import { createJwksRepositoryFactory } from "@/infrastructure/jose/jwks/memory/jwks-memory-repository-factory";
 
 import type { LogLevel } from "@/infrastructure/logging/types";
 
@@ -17,20 +16,14 @@ export const createGlobalContainer = (config: GlobalContainerConfig) =>
     .add({
       logger: () => createLogger({ level: config.LOG_LEVEL }),
     })
-    .add({
-      jwksRepository: () => createJwksRepository(),
-    })
     .add((ctx) => ({
-      jwksService: () => createJwksService(ctx.jwksRepository),
+      jwksRepository: () => createJwksRepositoryFactory({ logger: ctx.logger }),
+    }))
+    .add((ctx) => ({
+      joseAuthService: () => createJoseAuthService({ jwksRepository: ctx.jwksRepository }),
     }))
     .add({
-      jwtService: () => createJwtService(),
-    })
-    .add({
       appConfigRepository: () => createAppConfig(),
-    })
-    .add((ctx) => ({
-      storeService: () => createStoreService(ctx.jwksService),
-    }));
+    });
 
 export type GlobalContainer = ReturnType<typeof createGlobalContainer>;
