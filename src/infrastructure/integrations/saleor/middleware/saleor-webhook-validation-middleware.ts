@@ -1,14 +1,14 @@
+import type { MiddlewareHandler } from "hono";
 import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
-import type { MiddlewareHandler } from "hono";
 
 import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
-import { UnauthorizedError } from "@/lib/error/base";
-import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 import {
   saleorWebhookHeadersSchema,
   webhookDataSchema,
 } from "@/infrastructure/integrations/saleor/webhook/schema";
+import { UnauthorizedError } from "@/lib/error/base";
+import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 
 type Opts = {
   joseAuthService: JoseAuthService;

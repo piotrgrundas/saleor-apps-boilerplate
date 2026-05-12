@@ -1,8 +1,8 @@
 import { APP_CONFIG_ERROR_CODES } from "./scopes/app-config";
 import { JWKS_ERROR_CODES } from "./scopes/jwks";
 import { JWT_ERROR_CODES } from "./scopes/jwt";
-import { SALEOR_INSTALL_ERROR_CODES } from "./scopes/saleor-install";
 import { SALEOR_ERROR_CODES } from "./scopes/saleor";
+import { SALEOR_INSTALL_ERROR_CODES } from "./scopes/saleor-install";
 import { VALIDATION_ERROR_CODES } from "./scopes/validation";
 
 export const ErrorCodes = [

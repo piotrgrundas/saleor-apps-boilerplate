@@ -10,6 +10,7 @@ import { healthCheckMiddleware } from "@/lib/middleware/health-check-middleware"
 import { createLoggingMiddleware } from "@/lib/middleware/logging-middleware";
 import { publicFilesMiddleware } from "@/lib/middleware/public-files-middleware";
 import { requestOriginMiddleware } from "@/lib/middleware/request-origin-middleware";
+
 import { configurationRoutes } from "./api/rest/configuration/routes";
 import { APP_CONFIG } from "./config";
 

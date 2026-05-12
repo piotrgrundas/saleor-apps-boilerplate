@@ -76,7 +76,7 @@ When you see this pattern, do not "fix" the order. Treat the `init(...)` line as
 - ❌ Two blank lines between groups (single blank only).
 - ❌ Splitting `import type` away from `import` of the same module spec class.
 - ❌ Reordering the segments of a Sentry/OTel pattern, breaking instrumentation.
-- ❌ Sorting across group boundaries — sort *within* each group only.
+- ❌ Sorting across group boundaries — sort _within_ each group only.
 
 ## Function arguments — object destructuring beyond one
 
@@ -84,19 +84,15 @@ Functions, methods, factory closures with **two or more parameters** take a sing
 
 ```typescript
 // good — two+ params as object
-export const inProgressKey = (
-  { jobId, filename }: { jobId: string; filename: string },
-): string => `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
+export const inProgressKey = ({ jobId, filename }: { jobId: string; filename: string }): string =>
+  `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
 
 // bad — positional params with two+ args
-export const inProgressKey = (
-  jobId: string,
-  filename: string,
-): string => `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
+export const inProgressKey = (jobId: string, filename: string): string =>
+  `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
 
 // good — single param stays positional
-export const outKey = (filename: string): string =>
-  `${OUT_PREFIX}/${filename}`;
+export const outKey = (filename: string): string => `${OUT_PREFIX}/${filename}`;
 ```
 
 ### Why
@@ -117,13 +113,14 @@ export class CrawlCategoriesUseCase {
   private readonly storage: StorageService;
   // ...
 
-  constructor(
-    { stateService, storage /* ... */ }: {
-      stateService: GenerationStateService;
-      storage: StorageService;
-      // ...
-    },
-  ) {
+  constructor({
+    stateService,
+    storage /* ... */,
+  }: {
+    stateService: GenerationStateService;
+    storage: StorageService;
+    // ...
+  }) {
     this.stateService = stateService;
     this.storage = storage;
     // ...
@@ -132,7 +129,9 @@ export class CrawlCategoriesUseCase {
 
 // good — single dep keeps positional `private readonly` shorthand
 export class S3StorageService extends StorageService {
-  constructor(private readonly bucket: string) { super(); }
+  constructor(private readonly bucket: string) {
+    super();
+  }
 }
 
 // bad — 2+ positional params
@@ -157,12 +156,11 @@ Why losing the shorthand is worth it: callers benefit from named-arg semantics, 
 
 In identifiers, test descriptions, comments, and log messages: use the literal mechanism (predicate, method name, abstract term), not coined metaphors or vendor-specific terms in storage/runtime-agnostic layers.
 
-| ❌ jargon | ✅ literal |
-|---|---|
-| `"on budget cut"` | `"when shouldContinue returns false"` |
-| `"ifAbsent race lost"` | `"when stateService.save returns written: false"` |
+| ❌ jargon              | ✅ literal                                               |
+| ---------------------- | -------------------------------------------------------- |
+| `"on budget cut"`      | `"when shouldContinue returns false"`                    |
+| `"ifAbsent race lost"` | `"when stateService.save returns written: false"`        |
 | `clearOutBucket` (AWS) | `clearOutPrefix` (matches `StorageService.deletePrefix`) |
-| `// race lost` | `// save returned written: false — concurrent INIT won` |
+| `// race lost`         | `// save returned written: false — concurrent INIT won`  |
 
 Triggers to rewrite: `race`, `budget`, `magic`, `under the hood`, `bucket`/`S3 path`/`Lambda invocation` outside infra.
-

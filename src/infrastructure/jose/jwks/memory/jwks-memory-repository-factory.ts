@@ -3,10 +3,7 @@ import { err, ok } from "neverthrow";
 
 import type { AsyncResult } from "@/domain/errors/result";
 import type { JwksErrorCode } from "@/domain/errors/scopes/jwks";
-import type {
-  JsonWebKeySet,
-  JWKSRepositoryFactory,
-} from "@/domain/ports/jwks-repository";
+import type { JsonWebKeySet, JWKSRepositoryFactory } from "@/domain/ports/jwks-repository";
 import { getErrorMessage } from "@/lib/error/helpers";
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -16,14 +13,10 @@ const jwksUrlFor = (issuer: string): string => {
   return `${origin}/.well-known/jwks.json`;
 };
 
-export const createJwksRepositoryFactory: JWKSRepositoryFactory = ({
-  logger,
-}) => {
+export const createJwksRepositoryFactory: JWKSRepositoryFactory = ({ logger }) => {
   const cache = new NodeCache<JsonWebKeySet>({ stdTTL: CACHE_TTL_SECONDS });
 
-  const fetchJwks = async (
-    jwksUrl: string,
-  ): AsyncResult<JsonWebKeySet, JwksErrorCode> => {
+  const fetchJwks = async (jwksUrl: string): AsyncResult<JsonWebKeySet, JwksErrorCode> => {
     try {
       const response = await fetch(jwksUrl);
 

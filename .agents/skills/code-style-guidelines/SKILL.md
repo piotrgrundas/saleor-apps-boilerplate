@@ -76,7 +76,7 @@ When you see this pattern, do not "fix" the order. Treat the `init(...)` line as
 - ❌ Two blank lines between groups (single blank only).
 - ❌ Splitting `import type` away from `import` of the same module spec class.
 - ❌ Reordering the segments of a Sentry/OTel pattern, breaking instrumentation.
-- ❌ Sorting across group boundaries — sort *within* each group only.
+- ❌ Sorting across group boundaries — sort _within_ each group only.
 
 ## Function arguments — object destructuring beyond one
 
@@ -85,24 +85,21 @@ Functions, methods, factory closures with **two or more parameters** take a sing
 **Applies to every layer**: domain port methods, adapter factories, use-case factories + their returned handlers, DI factories, helper functions in `lib/`, middleware factories. Use-case input is always a single object even when it has one field (use-cases evolve; named input is forward-compatible).
 
 **Narrow exceptions** (positional allowed):
+
 - **`Logger` port methods** (`logger.debug(msg, meta?)`) — mirror the well-known `console.*` shape across the JS ecosystem. Rewriting them as `{ message, meta }` fights ingrained muscle memory + breaks structured-logger compatibility. Treat Logger as a vendor-API shim.
 - **Pure data-stream helpers** with a clear primary value + optional flags where positional reads more naturally than object (`path.join(a, b, c)`-style variadics — rare; document each case).
 
 ```typescript
 // good — two+ params as object
-export const inProgressKey = (
-  { jobId, filename }: { jobId: string; filename: string },
-): string => `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
+export const inProgressKey = ({ jobId, filename }: { jobId: string; filename: string }): string =>
+  `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
 
 // bad — positional params with two+ args
-export const inProgressKey = (
-  jobId: string,
-  filename: string,
-): string => `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
+export const inProgressKey = (jobId: string, filename: string): string =>
+  `${IN_PROGRESS_PREFIX}/${jobId}/${filename}`;
 
 // good — single param stays positional
-export const outKey = (filename: string): string =>
-  `${OUT_PREFIX}/${filename}`;
+export const outKey = (filename: string): string => `${OUT_PREFIX}/${filename}`;
 ```
 
 ### Why
@@ -123,13 +120,14 @@ export class CrawlCategoriesUseCase {
   private readonly storage: StorageService;
   // ...
 
-  constructor(
-    { stateService, storage /* ... */ }: {
-      stateService: GenerationStateService;
-      storage: StorageService;
-      // ...
-    },
-  ) {
+  constructor({
+    stateService,
+    storage /* ... */,
+  }: {
+    stateService: GenerationStateService;
+    storage: StorageService;
+    // ...
+  }) {
     this.stateService = stateService;
     this.storage = storage;
     // ...
@@ -138,7 +136,9 @@ export class CrawlCategoriesUseCase {
 
 // good — single dep keeps positional `private readonly` shorthand
 export class S3StorageService extends StorageService {
-  constructor(private readonly bucket: string) { super(); }
+  constructor(private readonly bucket: string) {
+    super();
+  }
 }
 
 // bad — 2+ positional params
@@ -156,7 +156,7 @@ Why losing the shorthand is worth it: callers benefit from named-arg semantics, 
 ### Function args anti-patterns
 
 - ❌ Two or more positional params on a free function, method, port signature, or factory (excluding constructors with `private readonly` single-dep shorthand, or documented well-known-API mirrors like `Logger`).
-- ❌ Object input with a single field on a *non-use-case* function (`fn({ jobId })` for one-arg helper) — pointless ceremony, prefer `fn(jobId)`. Use-cases keep object input for forward-compat.
+- ❌ Object input with a single field on a _non-use-case_ function (`fn({ jobId })` for one-arg helper) — pointless ceremony, prefer `fn(jobId)`. Use-cases keep object input for forward-compat.
 - ❌ Mixing one positional + one object (`fn(jobId, { filename })`) — pick a side, all-positional or all-object.
 - ❌ Port signature with 2+ positional params even when "intuitive" — `storage.put(key, body)` should be `storage.put({ key, body })`.
 
@@ -164,12 +164,11 @@ Why losing the shorthand is worth it: callers benefit from named-arg semantics, 
 
 In identifiers, test descriptions, comments, and log messages: use the literal mechanism (predicate, method name, abstract term), not coined metaphors or vendor-specific terms in storage/runtime-agnostic layers.
 
-| ❌ jargon | ✅ literal |
-|---|---|
-| `"on budget cut"` | `"when shouldContinue returns false"` |
-| `"ifAbsent race lost"` | `"when stateService.save returns written: false"` |
+| ❌ jargon              | ✅ literal                                               |
+| ---------------------- | -------------------------------------------------------- |
+| `"on budget cut"`      | `"when shouldContinue returns false"`                    |
+| `"ifAbsent race lost"` | `"when stateService.save returns written: false"`        |
 | `clearOutBucket` (AWS) | `clearOutPrefix` (matches `StorageService.deletePrefix`) |
-| `// race lost` | `// save returned written: false — concurrent INIT won` |
+| `// race lost`         | `// save returned written: false — concurrent INIT won`  |
 
 Triggers to rewrite: `race`, `budget`, `magic`, `under the hood`, `bucket`/`S3 path`/`Lambda invocation` outside infra.
-

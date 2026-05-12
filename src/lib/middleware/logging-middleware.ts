@@ -7,8 +7,7 @@ import { getElapsedTime } from "@/lib/utils/timing";
 const STATIC_PATH_RE =
   /\/(assets|public|static)\/|\.(ico|css|js|map|png|jpe?g|gif|svg|webp|woff2?|ttf)$/i;
 
-const isStaticRequest = (context: Context) =>
-  STATIC_PATH_RE.test(context.req.path);
+const isStaticRequest = (context: Context) => STATIC_PATH_RE.test(context.req.path);
 
 type Options = {
   service?: string;

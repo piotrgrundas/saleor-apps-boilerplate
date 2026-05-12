@@ -77,7 +77,7 @@ Override, don't rebuild:
 
 ```typescript
 // bad
-const subscription = { id: "s-1", userId: "u-1", status: "CANCELED", /* ...20 more */ };
+const subscription = { id: "s-1", userId: "u-1", status: "CANCELED" /* ...20 more */ };
 // good
 const { subscription } = createSubscription({ status: "CANCELED" });
 ```

@@ -7,9 +7,9 @@ Full docs: <https://github.com/supermacro/neverthrow#api-documentation>.
 
 ## Construction
 
-| Primitive | Returns |
-|---|---|
-| `ok(value)` | `Result<T, never>` |
+| Primitive    | Returns            |
+| ------------ | ------------------ |
+| `ok(value)`  | `Result<T, never>` |
 | `err(error)` | `Result<never, E>` |
 
 In this codebase `err`'s channel is always an array: `err([{ code, message, ... }])`.
@@ -55,6 +55,7 @@ async execute(input: Input): AsyncResult<Output, ScopeErrorCode> {
 ```
 
 **Rules:**
+
 - Every external `await` lives inside `try/catch` (or downstream call already returned a `Result`).
 - Translate caught throwables into typed `Error<Code>` arrays.
 - Early-return on `.isErr()` — no chaining, no `safeTry`, no `yield*`.
@@ -65,12 +66,12 @@ async execute(input: Input): AsyncResult<Output, ScopeErrorCode> {
 
 You'll still operate on synchronous `Result` values returned from awaited calls. These methods stay in play:
 
-| Method | Effect |
-|---|---|
-| `.map(fn)` | Transform success. Err passes through. |
-| `.mapErr(fn)` | Transform error. Ok passes through. |
+| Method                 | Effect                                            |
+| ---------------------- | ------------------------------------------------- |
+| `.map(fn)`             | Transform success. Err passes through.            |
+| `.mapErr(fn)`          | Transform error. Ok passes through.               |
 | `.isOk()` / `.isErr()` | Type guards (preferred in our early-return style) |
-| `.match(okFn, errFn)` | Inline branching at edges |
+| `.match(okFn, errFn)`  | Inline branching at edges                         |
 
 `.andThen` / `.orElse` / `.asyncMap` / `.asyncAndThen` / `.andTee` / `.orTee` exist in neverthrow but aren't used — express the same flow with `await` + `if`.
 
@@ -79,21 +80,19 @@ You'll still operate on synchronous `Result` values returned from awaited calls.
 Lives in `src/domain/errors/result.ts`. Use when an adapter / use-case wants to **collapse a downstream scope** into one of its own codes — the original `Error<FromCode>` is preserved as `details.cause`. Skip the helper when the caller needs to **discriminate** between downstream codes — propagate `result.error` directly and union the scope codes in the return type.
 
 ```typescript
-export const remapErrors = <
-  T,
-  FromCode extends ErrorCode,
-  ToCode extends ErrorCode,
->(
+export const remapErrors = <T, FromCode extends ErrorCode, ToCode extends ErrorCode>(
   result: Result<T, Error<FromCode>[]>,
   to: { code: ToCode; message: string; details?: Record<string, unknown> },
 ): Result<T, Error<ToCode>[]> => {
   if (result.isOk()) return ok(result.value);
 
-  return err(result.error.map((cause) => ({
-    code: to.code,
-    message: to.message,
-    details: { cause, ...to.details },
-  })));
+  return err(
+    result.error.map((cause) => ({
+      code: to.code,
+      message: to.message,
+      details: { cause, ...to.details },
+    })),
+  );
 };
 ```
 
@@ -117,12 +116,12 @@ Pass-through preserves the value, so it composes with the `await` + `.isErr()` e
 
 ## Unwrapping (edges only)
 
-| Method | Returns |
-|---|---|
-| `.isOk()` / `.isErr()` | `boolean` (type guards) — primary tool |
-| `.match(okFn, errFn)` | Result of the matching branch — handy at the HTTP boundary |
-| `.unwrapOr(default)` | Success value or default |
-| `._unsafeUnwrap()` / `._unsafeUnwrapErr()` | **Tests only** — throws on the wrong branch |
+| Method                                     | Returns                                                    |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| `.isOk()` / `.isErr()`                     | `boolean` (type guards) — primary tool                     |
+| `.match(okFn, errFn)`                      | Result of the matching branch — handy at the HTTP boundary |
+| `.unwrapOr(default)`                       | Success value or default                                   |
+| `._unsafeUnwrap()` / `._unsafeUnwrapErr()` | **Tests only** — throws on the wrong branch                |
 
 ## Combinators
 

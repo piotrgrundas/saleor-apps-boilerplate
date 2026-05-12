@@ -40,7 +40,7 @@ export const CRAWL_ERROR_CODES = [
   // ...
 ] as const satisfies readonly ErrorCodeFormat[];
 
-export type CrawlErrorCode = typeof CRAWL_ERROR_CODES[number];
+export type CrawlErrorCode = (typeof CRAWL_ERROR_CODES)[number];
 ```
 
 ```typescript
@@ -66,7 +66,7 @@ export const ErrorCodes = [
   ...FINALIZE_GENERATION_ERROR_CODES,
   ...GENERATION_CONTROL_ERROR_CODES,
 ] as const;
-export type ErrorCode = typeof ErrorCodes[number];
+export type ErrorCode = (typeof ErrorCodes)[number];
 
 export type Error<T extends ErrorCode = ErrorCode> = {
   code: T;
@@ -87,26 +87,24 @@ When existing scopes don't fit (typically: a new use-case with distinct failure 
 
 1. Create `scopes/<new-scope>.ts`:
 
-    ```typescript
-    import type { ErrorCodeFormat } from "../format.ts";
+   ```typescript
+   import type { ErrorCodeFormat } from "../format.ts";
 
-    export const CDN_ERROR_CODES = [
-      "CDN_PURGE_ERROR",
-    ] as const satisfies readonly ErrorCodeFormat[];
+   export const CDN_ERROR_CODES = ["CDN_PURGE_ERROR"] as const satisfies readonly ErrorCodeFormat[];
 
-    export type CdnErrorCode = typeof CDN_ERROR_CODES[number];
-    ```
+   export type CdnErrorCode = (typeof CDN_ERROR_CODES)[number];
+   ```
 
 2. In `base.ts`, import the new tuple and spread it into `ErrorCodes`:
 
-    ```typescript
-    import { CDN_ERROR_CODES } from "./scopes/cdn.ts";
+   ```typescript
+   import { CDN_ERROR_CODES } from "./scopes/cdn.ts";
 
-    export const ErrorCodes = [
-      ...CDN_ERROR_CODES,
-      // ...
-    ] as const;
-    ```
+   export const ErrorCodes = [
+     ...CDN_ERROR_CODES,
+     // ...
+   ] as const;
+   ```
 
 3. Boundary `switch` statements will need a new branch — TS forces the issue.
 
@@ -144,11 +142,13 @@ Every code must end with `_ERROR` (enforced by `ErrorCodeFormat`).
 Return `err([...])` with `Error<Code>` entries. **Always an array.**
 
 ```typescript
-return err([{
-  code: "CRAWL_PRODUCTS_FETCH_ERROR",
-  message: "Failed to fetch products page.",
-  details: { cause, channel: channel.slug, cursor },
-}]);
+return err([
+  {
+    code: "CRAWL_PRODUCTS_FETCH_ERROR",
+    message: "Failed to fetch products page.",
+    details: { cause, channel: channel.slug, cursor },
+  },
+]);
 ```
 
 - `message` is developer-facing. Short, declarative.
@@ -177,8 +177,9 @@ export type StartGenerationErrorCode =
   | SelfInvokerErrorCode;
 
 export const startGeneration =
-  (deps: Deps) =>
-  async (): AsyncResult<void, StartGenerationErrorCode> => { /* ... */ };
+  (deps: Deps) => async (): AsyncResult<void, StartGenerationErrorCode> => {
+    /* ... */
+  };
 ```
 
 ## Consuming errors
@@ -203,7 +204,7 @@ import { remapErrors } from "@/domain/errors/result.ts";
 const listResult = remapErrors(
   await ctx.storage.list(chunkPrefix({ jobId, phase, channel: channel.slug })),
   {
-    code: ctx.errorCodes.write,                   // re-map into caller's scope
+    code: ctx.errorCodes.write, // re-map into caller's scope
     message: `Failed to list existing ${phase.toLowerCase()} chunks.`,
     details: { jobId, channel: channel.slug },
   },
@@ -221,20 +222,19 @@ See `references/neverthrow-api.md` for the full house style and the list of bann
 `DomainError` (and subclasses) carry the typed `Error<Code>[]` as `cause`. The global `errorHandler` renders them. Routes pick the subclass that matches HTTP semantics.
 
 ```typescript
-import {
-  DomainError,
-  DomainNotFoundError,
-  DomainValidationError,
-} from "@/lib/error/handler.ts";
+import { DomainError, DomainNotFoundError, DomainValidationError } from "@/lib/error/handler.ts";
 
 return result.match(
   (data) => c.json(data),
   (errors) => {
     const [first] = errors;
     switch (first.code) {
-      case "GENERATION_CONTROL_ACTIVE_JOB_ERROR": throw new DomainError(409, errors);
-      case "GENERATION_STATE_PARSE_ERROR":         throw new DomainError(500, errors);
-      case "SELF_INVOKER_INVOKE_ERROR":            throw new DomainError(502, errors);
+      case "GENERATION_CONTROL_ACTIVE_JOB_ERROR":
+        throw new DomainError(409, errors);
+      case "GENERATION_STATE_PARSE_ERROR":
+        throw new DomainError(500, errors);
+      case "SELF_INVOKER_INVOKE_ERROR":
+        throw new DomainError(502, errors);
       // ...
       default: {
         const _exhaustive: never = first.code;
@@ -245,12 +245,12 @@ return result.match(
 );
 ```
 
-| Subclass | Status | Use for |
-|---|---|---|
-| `DomainValidationError` | 400 | Input / business-rule validation |
-| `DomainUnauthorizedError` | 401 | Caller not authenticated / forbidden |
-| `DomainNotFoundError` | 404 | Resource missing |
-| `DomainError(status, errors)` | any | Everything else (409 conflict, 502 upstream, …) |
+| Subclass                      | Status | Use for                                         |
+| ----------------------------- | ------ | ----------------------------------------------- |
+| `DomainValidationError`       | 400    | Input / business-rule validation                |
+| `DomainUnauthorizedError`     | 401    | Caller not authenticated / forbidden            |
+| `DomainNotFoundError`         | 404    | Resource missing                                |
+| `DomainError(status, errors)` | any    | Everything else (409 conflict, 502 upstream, …) |
 
 Pass the whole `errors` array — the class serializes every entry into the response `errors[]`.
 
@@ -260,14 +260,17 @@ Pass the whole `errors` array — the class serializes every entry into the resp
 import { err, ok, Result, ResultAsync } from "neverthrow";
 import type { Error, ErrorCode } from "./base.ts";
 
-export type OkType<T>  = T extends Result<infer O, unknown> ? O : never;
+export type OkType<T> = T extends Result<infer O, unknown> ? O : never;
 export type ErrType<T> = T extends Result<unknown, infer E> ? E : never;
 
-export type AsyncResult<T, Code extends ErrorCode = ErrorCode> =
-  Promise<Result<T, Error<Code>[]>>;
+export type AsyncResult<T, Code extends ErrorCode = ErrorCode> = Promise<Result<T, Error<Code>[]>>;
 
-export type OkResult<T>  = T extends (...args: never) => Promise<Result<infer Ok, unknown>> ? Ok : never;
-export type ErrResult<T> = T extends (...args: never) => Promise<Result<unknown, infer Err>> ? Err : never;
+export type OkResult<T> = T extends (...args: never) => Promise<Result<infer Ok, unknown>>
+  ? Ok
+  : never;
+export type ErrResult<T> = T extends (...args: never) => Promise<Result<unknown, infer Err>>
+  ? Err
+  : never;
 
 export const remapErrors = <T, From extends ErrorCode, To extends ErrorCode>(
   result: Result<T, Error<From>[]>,
@@ -282,12 +285,12 @@ export const remapErrors = <T, From extends ErrorCode, To extends ErrorCode>(
 export { Result, ResultAsync };
 ```
 
-| Helper | Purpose |
-|---|---|
-| `AsyncResult<T, Code>` | Canonical async return type — `Promise<Result<T, Error<Code>[]>>` |
-| `OkType<T>` / `ErrType<T>` | Extract sides of a `Result<O, E>` |
+| Helper                         | Purpose                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| `AsyncResult<T, Code>`         | Canonical async return type — `Promise<Result<T, Error<Code>[]>>`              |
+| `OkType<T>` / `ErrType<T>`     | Extract sides of a `Result<O, E>`                                              |
 | `OkResult<T>` / `ErrResult<T>` | Extract sides of a function returning `Promise<Result>` — useful in test types |
-| `remapErrors` | Wrap a callee's error in the caller's scope, preserving cause |
+| `remapErrors`                  | Wrap a callee's error in the caller's scope, preserving cause                  |
 
 ## Anti-patterns
 

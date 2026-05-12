@@ -1,4 +1,5 @@
 import { describe, expect } from "vite-plus/test";
+
 import { it } from "@/lib/test/it";
 
 import { fromCents, getCurrencyDecimals, toCents } from "./money";

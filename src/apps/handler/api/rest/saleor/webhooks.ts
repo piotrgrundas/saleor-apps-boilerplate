@@ -6,7 +6,10 @@ import type { SaleorWebhookHandlerContext } from "@/infrastructure/integrations/
 
 const webhooks = new Hono();
 
-webhooks.use("*", saleorWebhookValidationMiddleware({ joseAuthService: container.items.joseAuthService }));
+webhooks.use(
+  "*",
+  saleorWebhookValidationMiddleware({ joseAuthService: container.items.joseAuthService }),
+);
 
 /**
  * POST /api/saleor/webhooks/product-updated

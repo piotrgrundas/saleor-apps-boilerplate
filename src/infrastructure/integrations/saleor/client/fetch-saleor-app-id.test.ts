@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, vi } from "vite-plus/test";
+
 import { it } from "@/lib/test/it";
 
 import { fetchSaleorAppId } from "./fetch-saleor-app-id";

@@ -16,9 +16,15 @@ export const sitemapSchema = z.object({
 export type Sitemap = z.infer<typeof sitemapSchema>;
 
 // Named transitions — pure, named, no methods.
-export const newSitemap = (
-  { channelSlug, url, now }: { channelSlug: string; url: string; now: Date },
-): Sitemap => ({ channelSlug, url, generatedAt: now });
+export const newSitemap = ({
+  channelSlug,
+  url,
+  now,
+}: {
+  channelSlug: string;
+  url: string;
+  now: Date;
+}): Sitemap => ({ channelSlug, url, generatedAt: now });
 ```
 
 ## 2. Error scopes — `src/domain/errors/scopes/*.ts`
@@ -32,7 +38,7 @@ import type { ErrorCodeFormat } from "../format.ts";
 export const SITEMAP_STORE_ERROR_CODES = [
   "SITEMAP_STORE_UPLOAD_ERROR",
 ] as const satisfies readonly ErrorCodeFormat[];
-export type SitemapStoreErrorCode = typeof SITEMAP_STORE_ERROR_CODES[number];
+export type SitemapStoreErrorCode = (typeof SITEMAP_STORE_ERROR_CODES)[number];
 ```
 
 ```typescript
@@ -42,8 +48,7 @@ import type { ErrorCodeFormat } from "../format.ts";
 export const PRODUCT_CATALOGUE_ERROR_CODES = [
   "PRODUCT_CATALOGUE_FETCH_ERROR",
 ] as const satisfies readonly ErrorCodeFormat[];
-export type ProductCatalogueErrorCode =
-  typeof PRODUCT_CATALOGUE_ERROR_CODES[number];
+export type ProductCatalogueErrorCode = (typeof PRODUCT_CATALOGUE_ERROR_CODES)[number];
 ```
 
 ```typescript
@@ -53,8 +58,7 @@ import type { ErrorCodeFormat } from "../format.ts";
 export const GENERATE_SITEMAP_ERROR_CODES = [
   "GENERATE_SITEMAP_BUILD_EMPTY_ERROR",
 ] as const satisfies readonly ErrorCodeFormat[];
-export type GenerateSitemapErrorCode =
-  typeof GENERATE_SITEMAP_ERROR_CODES[number];
+export type GenerateSitemapErrorCode = (typeof GENERATE_SITEMAP_ERROR_CODES)[number];
 ```
 
 Aggregate in `base.ts`:
@@ -98,9 +102,7 @@ import type { ProductCatalogueErrorCode } from "@/domain/errors/scopes/product-c
 export type ProductRef = { slug: string; updatedAt: Date };
 
 export type ProductCatalogue = {
-  listForChannel(
-    channelSlug: string,
-  ): AsyncResult<ProductRef[], ProductCatalogueErrorCode>;
+  listForChannel(channelSlug: string): AsyncResult<ProductRef[], ProductCatalogueErrorCode>;
 };
 ```
 
@@ -120,18 +122,22 @@ export const createS3SitemapStore = (bucket: string): SitemapStore => {
   return {
     async upload({ channelSlug, body }) {
       try {
-        await client.send(new PutObjectCommand({
-          Bucket: bucket,
-          Key: `sitemaps/${channelSlug}.xml`,
-          Body: body,
-        }));
+        await client.send(
+          new PutObjectCommand({
+            Bucket: bucket,
+            Key: `sitemaps/${channelSlug}.xml`,
+            Body: body,
+          }),
+        );
         return ok(`https://${bucket}.s3.amazonaws.com/sitemaps/${channelSlug}.xml`);
       } catch (cause) {
-        return err([{
-          code: "SITEMAP_STORE_UPLOAD_ERROR",
-          message: "Failed to upload sitemap to S3.",
-          details: { cause, channelSlug, bucket },
-        }]);
+        return err([
+          {
+            code: "SITEMAP_STORE_UPLOAD_ERROR",
+            message: "Failed to upload sitemap to S3.",
+            details: { cause, channelSlug, bucket },
+          },
+        ]);
       }
     },
   };
@@ -171,9 +177,7 @@ export type GenerateSitemapErrors =
 
 export const generateSitemapUseCase =
   ({ catalogue, store, logger }: Deps) =>
-  async (
-    { channelSlug }: { channelSlug: string },
-  ): AsyncResult<Sitemap, GenerateSitemapErrors> => {
+  async ({ channelSlug }: { channelSlug: string }): AsyncResult<Sitemap, GenerateSitemapErrors> => {
     logger.info("Generating sitemap.", { channelSlug });
 
     const productsResult = await catalogue.listForChannel(channelSlug);
@@ -182,21 +186,25 @@ export const generateSitemapUseCase =
     const xml = buildSitemapXml(productsResult.value);
 
     if (xml.byteLength === 0) {
-      return err([{
-        code: "GENERATE_SITEMAP_BUILD_EMPTY_ERROR",
-        message: "Built sitemap is empty — refusing to upload.",
-        details: { channelSlug },
-      }]);
+      return err([
+        {
+          code: "GENERATE_SITEMAP_BUILD_EMPTY_ERROR",
+          message: "Built sitemap is empty — refusing to upload.",
+          details: { channelSlug },
+        },
+      ]);
     }
 
     const uploadResult = await store.upload({ channelSlug, body: xml });
     if (uploadResult.isErr()) return err(uploadResult.error);
 
-    return ok(newSitemap({
-      channelSlug,
-      url: uploadResult.value,
-      now: new Date(),
-    }));
+    return ok(
+      newSitemap({
+        channelSlug,
+        url: uploadResult.value,
+        now: new Date(),
+      }),
+    );
   };
 
 export type GenerateSitemapUseCase = ReturnType<typeof generateSitemapUseCase>;
@@ -219,8 +227,7 @@ export const container = createGlobalContainer(APP_CONFIG)
   .add({
     sitemapBucket: () => APP_CONFIG.SITEMAP_BUCKET,
     batchPageSize: () => APP_CONFIG.BATCH_PAGE_SIZE,
-    saleorClient: () =>
-      baseSaleorClientFactory({ saleorDomain: APP_CONFIG.SALEOR_DOMAIN }),
+    saleorClient: () => baseSaleorClientFactory({ saleorDomain: APP_CONFIG.SALEOR_DOMAIN }),
   })
   .add((ctx) => ({
     productCatalogue: () =>
@@ -256,11 +263,13 @@ const inputSchema = z.object({ channelSlug: z.string().min(1) });
 export const sitemapRoute = new Hono().post("/sitemaps", async (c) => {
   const parsed = inputSchema.safeParse(await c.req.json());
   if (!parsed.success) {
-    throw new DomainValidationError([{
-      code: "VALIDATION_ERROR",
-      message: "Invalid input.",
-      details: parsed.error.issues,
-    }]);
+    throw new DomainValidationError([
+      {
+        code: "VALIDATION_ERROR",
+        message: "Invalid input.",
+        details: parsed.error.issues,
+      },
+    ]);
   }
 
   const result = await container.items.generateSitemapUseCase(parsed.data);

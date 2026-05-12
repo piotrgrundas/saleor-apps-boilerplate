@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, vi } from "vite-plus/test";
-import { it } from "@/lib/test/it";
 
 import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
+import { it } from "@/lib/test/it";
+
 import { createAwsSecretManagerAppConfigRepository } from "./aws-secret-manager-app-config-repository";
 
 const sendMock = vi.fn();
@@ -113,7 +114,10 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.set({ saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG });
+      const result = await repo.set({
+        saleorDomain: TEST_CONFIG.saleorDomain,
+        config: TEST_CONFIG,
+      });
 
       // then
       expect(result.isOk()).toBe(true);
@@ -128,7 +132,10 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.set({ saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG });
+      const result = await repo.set({
+        saleorDomain: TEST_CONFIG.saleorDomain,
+        config: TEST_CONFIG,
+      });
 
       // then
       expect(result.isErr()).toBe(true);

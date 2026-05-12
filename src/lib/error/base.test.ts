@@ -1,7 +1,8 @@
 import { describe, expect } from "vite-plus/test";
-import { it } from "@/lib/test/it";
 
 import type { Error as DomainErr } from "@/domain/errors/base";
+import { it } from "@/lib/test/it";
+
 import { DomainException, ValidationException } from "./base";
 
 describe("DomainException", () => {

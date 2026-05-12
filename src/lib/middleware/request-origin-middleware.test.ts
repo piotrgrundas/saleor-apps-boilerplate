@@ -1,8 +1,9 @@
 import { describe, expect } from "vite-plus/test";
-import { it } from "@/lib/test/it";
 
 import { createTestApp } from "@/lib/test/app";
+import { it } from "@/lib/test/it";
 import { createTestRequest } from "@/lib/test/request";
+
 import { requestOriginMiddleware } from "./request-origin-middleware";
 
 function createApp() {

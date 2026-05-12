@@ -14,8 +14,19 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
   },
   lint: {
+    jsPlugins: [{ name: "import-js", specifier: "./oxlint-plugins/eslint-import.mjs" }],
     rules: {
       "no-unused-vars": "error",
+      "import-js/order": [
+        "error",
+        {
+          groups: [["builtin", "external"], "internal", ["parent", "sibling", "index"]],
+          "newlines-between": "always",
+          pathGroups: [{ pattern: "@/**", group: "internal", position: "before" }],
+          pathGroupsExcludedImportTypes: ["builtin"],
+          alphabetize: { order: "asc", caseInsensitive: true },
+        },
+      ],
     },
     ignorePatterns: [
       "node_modules/**",
@@ -23,6 +34,14 @@ export default defineConfig({
       "scripts/**",
       "**/*.generated.*",
       "**/generated.ts",
+    ],
+    overrides: [
+      {
+        files: ["**/lib/test/**", "**/*.test.ts", "**/*.spec.ts"],
+        rules: {
+          "no-empty-pattern": "off",
+        },
+      },
     ],
   },
   fmt: {

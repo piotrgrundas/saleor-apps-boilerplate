@@ -1,9 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
 import { createSchema, createYoga } from "graphql-yoga";
 import { Hono } from "hono";
+import fs from "node:fs";
+import path from "node:path";
 
 import { IS_DEV } from "@/constants";
+
 import { resolvers } from "./resolvers";
 import { createUserLoader } from "./resolvers/types/user/data-loaders";
 import type { GraphQLContext } from "./types";

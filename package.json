@@ -54,6 +54,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.1.2",
     "dotenv": "^17.4.2",
+    "eslint-plugin-import": "^2.32.0",
     "tsdown": "^0.22.0",
     "tsx": "^4.19.4",
     "typescript": "^6.0.3",

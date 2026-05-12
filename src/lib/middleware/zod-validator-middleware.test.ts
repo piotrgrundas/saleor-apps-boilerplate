@@ -1,10 +1,11 @@
 import { describe, expect } from "vite-plus/test";
-import { it } from "@/lib/test/it";
 import { z } from "zod";
 
 import { ValidationError } from "@/lib/error/base";
 import { createTestApp } from "@/lib/test/app";
+import { it } from "@/lib/test/it";
 import { createTestRequest } from "@/lib/test/request";
+
 import { zodValidatorMiddleware } from "./zod-validator-middleware";
 
 function createApp() {
@@ -14,7 +15,9 @@ function createApp() {
   });
 
   const app = createTestApp();
-  app.post("/test", zodValidatorMiddleware("json", schema), (context) => context.json({ ok: true }));
+  app.post("/test", zodValidatorMiddleware("json", schema), (context) =>
+    context.json({ ok: true }),
+  );
   app.onError((err, context) => {
     if (err instanceof ValidationError) {
       return context.json({ error: "Validation failed", details: err.details }, 400);
@@ -69,7 +72,9 @@ describe("zodValidatorMiddleware", () => {
     // given
     const querySchema = z.object({ page: z.string().min(1) });
     const app = createTestApp();
-    app.get("/test", zodValidatorMiddleware("query", querySchema), (context) => context.json({ ok: true }));
+    app.get("/test", zodValidatorMiddleware("query", querySchema), (context) =>
+      context.json({ ok: true }),
+    );
     app.onError((err, context) => {
       if (err instanceof ValidationError) {
         return context.json({ error: "Validation failed" }, 400);

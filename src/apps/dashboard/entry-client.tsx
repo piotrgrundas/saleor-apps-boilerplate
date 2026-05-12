@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { SaleorAppsProvider } from "@/lib/client/components/saleor-apps-provider";
+
 import { AboutView } from "./client/views/about/about-view";
 import {
   ConfigurationView,

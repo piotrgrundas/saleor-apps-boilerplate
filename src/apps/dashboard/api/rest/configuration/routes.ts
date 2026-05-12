@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 
-import { saleorDomainHeaderSchema } from "@/infrastructure/integrations/saleor/header/schema";
 import { appSettingsSchema, dashboardAppConfigSchema } from "@/apps/dashboard/app-config";
 import { container } from "@/apps/dashboard/di/container";
+import { saleorDomainHeaderSchema } from "@/infrastructure/integrations/saleor/header/schema";
 import { BadRequestError, NotFoundError } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 

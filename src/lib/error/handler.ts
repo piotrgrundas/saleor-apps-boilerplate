@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 
 import type { Logger } from "@/domain/ports/logger";
+
 import { DomainException, HttpError, InternalServerError } from "./base";
 import { getErrorMessage } from "./helpers";
 

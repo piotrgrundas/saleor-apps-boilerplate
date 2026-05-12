@@ -2,14 +2,15 @@ import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
 import { requestId } from "hono/request-id";
 
-import { initSentry, Sentry } from "@/infrastructure/logging/sentry/instrument";
 import { container } from "@/apps/handler/di/container";
+import { initSentry, Sentry } from "@/infrastructure/logging/sentry/instrument";
 import { createErrorHandler } from "@/lib/error/handler";
 import { createAssetsMiddleware } from "@/lib/middleware/assets-middleware";
 import { healthCheckMiddleware } from "@/lib/middleware/health-check-middleware";
 import { createLoggingMiddleware } from "@/lib/middleware/logging-middleware";
 import { publicFilesMiddleware } from "@/lib/middleware/public-files-middleware";
 import { requestOriginMiddleware } from "@/lib/middleware/request-origin-middleware";
+
 import { graphqlApp } from "./api/graphql";
 import { saleorApi } from "./api/rest/saleor";
 import { APP_CONFIG } from "./config";

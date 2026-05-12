@@ -19,7 +19,9 @@ description: Enforce Vitest test conventions — every `it(...)` body splits int
 Every `it(...)` / `it.for(...)` body has these three lowercase markers, in order, each on its own line with a blank line above:
 
 ```typescript
-it("should return isActive false when subscription is cancelled", async ({ createSubscription }) => {
+it("should return isActive false when subscription is cancelled", async ({
+  createSubscription,
+}) => {
   // given
   const useCaseResult = createSubscription({ status: "CANCELED" });
   mockExecute.mockResolvedValue(useCaseResult);
@@ -53,8 +55,12 @@ Two levels: outer = file/feature/module, inner = function/method/query.
 ```typescript
 describe("subscription queries", () => {
   describe("serviceSubscription", () => {
-    it("should return subscription with enriched items when found", async () => { /* ... */ });
-    it("should return isActive false when subscription is cancelled", async () => { /* ... */ });
+    it("should return subscription with enriched items when found", async () => {
+      /* ... */
+    });
+    it("should return isActive false when subscription is cancelled", async () => {
+      /* ... */
+    });
   });
 });
 ```

@@ -5,6 +5,7 @@ import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
 import type { JWKSRepository } from "@/domain/ports/jwks-repository";
 import type { Logger } from "@/domain/ports/logger";
 import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
+
 import {
   createMockAppConfigRepository,
   createMockJoseAuthService,

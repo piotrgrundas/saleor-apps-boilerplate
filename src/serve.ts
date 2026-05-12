@@ -3,12 +3,12 @@
  * Uses @hono/node-server with Hono.
  * Run with: tsx watch src/serve.ts
  */
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
 import { createLogger } from "@/di/factories/logging";
 
 const logger = createLogger({ level: "info" }).withTag("dev server");

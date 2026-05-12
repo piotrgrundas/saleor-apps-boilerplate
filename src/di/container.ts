@@ -1,11 +1,11 @@
 import { createContainer } from "iti";
 
-import { createAppConfig } from "./factories/app-config";
-import { createLogger } from "./factories/logging";
 import { createJoseAuthService } from "@/infrastructure/jose/auth/jose-auth-service";
 import { createJwksRepositoryFactory } from "@/infrastructure/jose/jwks/memory/jwks-memory-repository-factory";
-
 import type { LogLevel } from "@/infrastructure/logging/types";
+
+import { createAppConfig } from "./factories/app-config";
+import { createLogger } from "./factories/logging";
 
 export type GlobalContainerConfig = {
   LOG_LEVEL: LogLevel;

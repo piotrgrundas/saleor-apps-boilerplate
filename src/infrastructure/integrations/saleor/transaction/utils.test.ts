@@ -1,11 +1,11 @@
 import { describe, expect } from "vite-plus/test";
-import { it } from "@/lib/test/it";
 
 import {
   getFailureEventType,
   getRequestEventType,
   getSuccessEventType,
 } from "@/infrastructure/integrations/saleor/transaction/utils";
+import { it } from "@/lib/test/it";
 
 describe("transaction utils", () => {
   it("returns correct success event types", () => {

@@ -11,7 +11,7 @@ DI is split across two tiers:
 
 Naming is deliberate: the global factory is named `createGlobalContainer` because cross-app reach is something you want to see in code review. Per-app `container` lives at a fixed path inside the app, so callers always see `import { container } from "./di/container.ts"` — the path supplies the namespace, the name stays generic.
 
-**Concrete adapter factory imports** (`createS3Storage`, `createSaleorProductCatalogue`, `createLambdaScheduler`, etc.) **are allowed ONLY under `src/di/**` and `src/apps/*/di/**`.** Domain, application, infrastructure-of-other-adapters, and entry-servers depend on **port types**, never on adapter factories.
+**Concrete adapter factory imports** (`createS3Storage`, `createSaleorProductCatalogue`, `createLambdaScheduler`, etc.) **are allowed ONLY under `src/di/**`and`src/apps/\*/di/**`.** Domain, application, infrastructure-of-other-adapters, and entry-servers depend on **port types**, never on adapter factories.
 
 Why: each app deploys as its own Lambda with its own env requirements. Per-app containers keep one app's config from leaking into another's boot path. The global tier exists for things truly common — push everything else down to the per-app tier.
 
@@ -52,8 +52,7 @@ export const createGlobalContainer = (config: GlobalContainerConfig) =>
           : createLambdaScheduler({ functionName: ctx.generatorTarget }),
     }))
     .add((ctx) => ({
-      jobs: (): JobRepository =>
-        createJobRepository({ storage: ctx.storage, key: ctx.stateKey }),
+      jobs: (): JobRepository => createJobRepository({ storage: ctx.storage, key: ctx.stateKey }),
     }));
 
 // ✅ src/apps/handler/di/container.ts (per-app)
@@ -63,16 +62,15 @@ import { createGlobalContainer } from "@/di/container.ts";
 
 import { APP_CONFIG } from "../config.ts";
 
-export const container = createGlobalContainer(APP_CONFIG)
-  .add((ctx) => ({
-    getGenerationStatusUseCase: () => getGenerationStatusUseCase({ jobs: ctx.jobs }),
-    startGenerationUseCase: () =>
-      startGenerationUseCase({
-        jobs: ctx.jobs,
-        scheduler: ctx.scheduler,
-        logger: ctx.logger,
-      }),
-  }));
+export const container = createGlobalContainer(APP_CONFIG).add((ctx) => ({
+  getGenerationStatusUseCase: () => getGenerationStatusUseCase({ jobs: ctx.jobs }),
+  startGenerationUseCase: () =>
+    startGenerationUseCase({
+      jobs: ctx.jobs,
+      scheduler: ctx.scheduler,
+      logger: ctx.logger,
+    }),
+}));
 
 // ✅ src/apps/handler/api/rest/generation/routes.ts (boundary)
 import { container } from "@/apps/handler/di/container.ts";
@@ -173,11 +171,11 @@ Use this sparingly. Most things in this codebase are container-time singletons.
 
 ## Accessing the container
 
-| Pattern | When |
-|---|---|
-| `container.items.xxx` | Default. Sync, cached. Use in HTTP handlers, lambda handler. |
-| `container.get("xxx")` | Only when the entry is declared `async`. |
-| `container.getItems([...])` | Rarely needed — destructure from `.items` instead. |
+| Pattern                     | When                                                         |
+| --------------------------- | ------------------------------------------------------------ |
+| `container.items.xxx`       | Default. Sync, cached. Use in HTTP handlers, lambda handler. |
+| `container.get("xxx")`      | Only when the entry is declared `async`.                     |
+| `container.getItems([...])` | Rarely needed — destructure from `.items` instead.           |
 
 ```typescript
 // Use-case invocation at the boundary
@@ -228,12 +226,20 @@ Several use-cases share orchestration logic (pagination loop, write-chunk + save
 
 ```typescript
 // src/application/crawl/crawl-loop.ts — pure helper
-export const runCrawlLoop = async <TCheckpoint, TError extends ErrorCode>(
-  { shouldContinue, isExhausted, initial, step }: { /* ... */ },
-): AsyncResult<CrawlLoopResult<TCheckpoint>, TError> => { /* ... */ };
+export const runCrawlLoop = async <TCheckpoint, TError extends ErrorCode>({
+  shouldContinue,
+  isExhausted,
+  initial,
+  step,
+}: {
+  /* ... */
+}): AsyncResult<CrawlLoopResult<TCheckpoint>, TError> => {
+  /* ... */
+};
 
 // src/application/crawl/crawl-channel-scoped.ts — use-case using the helper
-export const crawlChannelScopedUseCase = (deps: Deps, config: Config) =>
+export const crawlChannelScopedUseCase =
+  (deps: Deps, config: Config) =>
   async ({ job, shouldContinue }) => {
     // ...
     const loopResult = await runCrawlLoop({ shouldContinue, isExhausted, initial, step });
@@ -279,4 +285,4 @@ expect(scheduler.triggerNext).toHaveBeenCalledOnce();
 - ❌ Renaming the per-app export from `container` to `<app>Container` — the file path provides the namespace.
 - ❌ Pushing app-specific config / adapters into the global tier just because "it could be shared one day". Wait until the second app actually needs it.
 - ❌ Container takes per-invocation state as a build argument — use parameterized factory entries or pass via the use-case's input arg.
-- ❌ `new XxxClass(...)` in a DI binding — adapters are factory functions, not classes. (Vendor SDK classes like `S3Client` are fine *inside* the adapter factory.)
+- ❌ `new XxxClass(...)` in a DI binding — adapters are factory functions, not classes. (Vendor SDK classes like `S3Client` are fine _inside_ the adapter factory.)

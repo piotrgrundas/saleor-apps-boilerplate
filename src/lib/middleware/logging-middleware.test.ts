@@ -1,10 +1,11 @@
 import type { Context } from "hono";
 import { describe, expect } from "vite-plus/test";
 
-import { it } from "@/lib/test/it";
 import { createTestApp } from "@/lib/test/app";
+import { it } from "@/lib/test/it";
 import { createMockLogger } from "@/lib/test/mock";
 import { createTestRequest } from "@/lib/test/request";
+
 import { createLoggingMiddleware } from "./logging-middleware";
 
 function createSpyLogger() {
@@ -111,7 +112,9 @@ describe("createLoggingMiddleware", () => {
     const app = createTestApp();
     app.use(
       "*",
-      createLoggingMiddleware(logger, { skip: (context) => context.req.path.startsWith("/health") }),
+      createLoggingMiddleware(logger, {
+        skip: (context) => context.req.path.startsWith("/health"),
+      }),
     );
     app.get("/health", (context) => context.text("ok"));
 

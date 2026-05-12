@@ -1,8 +1,8 @@
 import { z } from "zod";
 
+import { saleorEnvSchema } from "@/infrastructure/integrations/saleor/env/schema";
 import { awsConfigSchema, baseConfigSchema } from "@/lib/config/schema";
 import { prepareConfig } from "@/lib/config/util";
-import { saleorEnvSchema } from "@/infrastructure/integrations/saleor/env/schema";
 
 const configSchema = z
   .object({

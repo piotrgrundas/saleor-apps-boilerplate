@@ -2,12 +2,12 @@ import { err, ok } from "neverthrow";
 
 import type { AsyncResult } from "@/domain/errors/result";
 import type { SaleorErrorCode } from "@/domain/errors/scopes/saleor";
-import { getErrorMessage } from "@/lib/error/helpers";
-import type { GraphQLResponse } from "@/lib/graphql/types";
 import {
   AppIdDocument,
   type AppIdQuery,
 } from "@/infrastructure/integrations/saleor/graphql/AppIdQuery.generated";
+import { getErrorMessage } from "@/lib/error/helpers";
+import type { GraphQLResponse } from "@/lib/graphql/types";
 
 export type FetchSaleorAppIdInput = {
   apiUrl: string;

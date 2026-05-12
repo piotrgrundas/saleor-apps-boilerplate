@@ -46,7 +46,7 @@ src/
 ```
 
 - **Depend inward only.** `domain/` never imports `application/`, `infrastructure/`, `di/`, or vendor SDKs. `application/` imports `domain/` only. `infrastructure/` imports `domain/` only.
-- **Concrete-adapter importers are only `src/di/**` and `src/apps/*/di/**`.** Application code depends on port *types*, never on `createSaleorCatalogue` or `createS3Storage` directly.
+- **Concrete-adapter importers are only `src/di/**`and`src/apps/*/di/**`.** Application code depends on port *types\*, never on `createSaleorCatalogue` or `createS3Storage` directly.
 - Per-app DI containers merge global (`createGlobalContainer(APP_CONFIG)`) and add what the app needs — keeps each Lambda's env requirements scoped to its own slice.
 - The global container hosts only **genuinely shared** primitives (logger, storage, scheduler, repository). Avoid pushing app-specific config there.
 - **Vendor subfolder per adapter** under the port folder: `infrastructure/<port>/<vendor>/<vendor>-<port>.ts`. Examples: `infrastructure/storage/s3/s3-storage.ts`, `infrastructure/jwks/jose/jose-jwks-repository.ts`, `infrastructure/logging/ts-log/ts-logger.ts`. The vendor folder isolates vendor-specific helpers (graphql docs, schemas, native bindings) alongside the adapter; the file keeps the vendor prefix for grep + AI navigation.
@@ -64,9 +64,7 @@ src/
 `src/domain/use-case.ts`:
 
 ```typescript
-export type UseCase<TInput = void, TOutput = unknown> = (
-  input: TInput,
-) => TOutput;
+export type UseCase<TInput = void, TOutput = unknown> = (input: TInput) => TOutput;
 ```
 
 A use-case is a function. It is produced by a **factory function** that closes over its dependencies. The factory is exported; the returned function type is also exported for consumers that need to type it.
@@ -105,11 +103,13 @@ export const startGenerationUseCase =
 
     const active = findActiveJob(loadResult.value);
     if (active !== null) {
-      return err([{
-        code: "GENERATION_CONTROL_ACTIVE_JOB_ERROR",
-        message: "Cannot start: an active job is already running.",
-        details: { jobId: active.jobId, phase: active.phase },
-      }]);
+      return err([
+        {
+          code: "GENERATION_CONTROL_ACTIVE_JOB_ERROR",
+          message: "Cannot start: an active job is already running.",
+          details: { jobId: active.jobId, phase: active.phase },
+        },
+      ]);
     }
 
     logger.info("CONTROL: triggering manual generation start.");
@@ -170,8 +170,12 @@ src/infrastructure/
 export const createS3Storage = (bucket: string): Storage => {
   const client = new S3Client();
   return {
-    async get(key) { /* ... */ },
-    async put({ key, body, ifAbsent }) { /* ... */ },
+    async get(key) {
+      /* ... */
+    },
+    async put({ key, body, ifAbsent }) {
+      /* ... */
+    },
     // ...
   };
 };
@@ -203,9 +207,14 @@ export const generationJobSchema = z.object({
 
 export type GenerationJob = z.infer<typeof generationJobSchema>;
 
-export const startNewJob = (
-  { jobId, now }: { jobId: string; now: Date },
-): GenerationJob => ({ jobId, startedAt: now, phase: "INIT", invocationCount: 0, cursor: null, channel: null });
+export const startNewJob = ({ jobId, now }: { jobId: string; now: Date }): GenerationJob => ({
+  jobId,
+  startedAt: now,
+  phase: "INIT",
+  invocationCount: 0,
+  cursor: null,
+  channel: null,
+});
 
 export const advancePhase = (job: GenerationJob): GenerationJob | null => {
   const next = nextGenerationPhase(job.phase);
@@ -239,7 +248,7 @@ export const CRAWL_ERROR_CODES = [
   "CRAWL_PRODUCTS_FETCH_ERROR",
   // ...
 ] as const satisfies readonly ErrorCodeFormat[];
-export type CrawlErrorCode = typeof CRAWL_ERROR_CODES[number];
+export type CrawlErrorCode = (typeof CRAWL_ERROR_CODES)[number];
 ```
 
 ```typescript
@@ -253,7 +262,7 @@ export const ErrorCodes = [
   ...CRAWL_ERROR_CODES,
   // ...
 ] as const;
-export type ErrorCode = typeof ErrorCodes[number];
+export type ErrorCode = (typeof ErrorCodes)[number];
 ```
 
 - **One file per scope.** Don't pile codes into `base.ts`. Scope file owns its constant tuple and emits the scope type.
@@ -340,11 +349,11 @@ Full handler body, class definitions: **[references/errors.md](references/errors
 - ❌ Vendor-specific helpers at the port folder root (`infrastructure/storage/s3-helpers.ts`) — move into the vendor folder. Only port-level shared utilities (types, redaction) live at the root.
 - ❌ Use-case as class with `.execute()` — must be factory function returning a curried handler.
 - ❌ Inheritance in `application/` (`class ChannelScopedCrawl extends CatalogueCrawl`) — compose via shared helper modules.
-- ❌ Concrete adapter import outside `src/di/**`, `src/apps/*/di/**` — application/use-cases depend on the port *type* only.
+- ❌ Concrete adapter import outside `src/di/**`, `src/apps/*/di/**` — application/use-cases depend on the port _type_ only.
 - ❌ Use-case factory calling another use-case factory inside — extract shared logic to a helper module both call.
 - ❌ Boundary code (entry-server / route) calling adapters or ports directly — touch `container.items.<useCase>(...)` only.
 - ❌ Domain importing `application/`, `infrastructure/`, `di/`, or vendor SDKs.
-- ❌ Adding *methods* to a domain entity — define **named transition functions** at the entity's module level.
+- ❌ Adding _methods_ to a domain entity — define **named transition functions** at the entity's module level.
 - ❌ Inline state-mutation in use-case (`{ ...job, invocationCount: job.invocationCount + 1 }`) when a transition like `recordBatch` exists — call the transition.
 - ❌ Hand-writing TS `interface`/`type` for a domain object — schema first via `z.infer`.
 - ❌ Path under `src/application/domain/` or `src/application/infrastructure/` — those locations are dead; entities live in `src/domain/`, adapters in `src/infrastructure/`.

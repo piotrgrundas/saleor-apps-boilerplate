@@ -1,15 +1,16 @@
 import { err, ok } from "neverthrow";
 import { describe, expect } from "vite-plus/test";
-import { it } from "@/lib/test/it";
 
 import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
 import type { JWKSRepository } from "@/domain/ports/jwks-repository";
 import type { FetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
+import { it } from "@/lib/test/it";
 import {
   createMockAppConfigRepository,
   createMockJwksRepository,
   createMockLogger,
 } from "@/lib/test/mock";
+
 import { createSaleorInstall } from "./saleor-install";
 
 const INPUT = {
@@ -112,8 +113,7 @@ describe("createSaleorInstall", () => {
     // given
     const failingRepo: AppConfigRepository = {
       get: async () => ok(null),
-      set: async () =>
-        err([{ code: "APP_CONFIG_WRITE_ERROR", message: "write failed" }]),
+      set: async () => err([{ code: "APP_CONFIG_WRITE_ERROR", message: "write failed" }]),
       delete: async () => ok(undefined),
     };
     const install = createSaleorInstall({
