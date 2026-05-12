@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const baseConfigSchema = z.object({
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error"]).default("info"),
   BASE_PATH: z.string().default(""),
 });
 

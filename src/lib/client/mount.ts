@@ -6,10 +6,10 @@ import { html } from "hono/html";
  * Each app's assets live under dist/assets/{appName}/.
  */
 export function createClientEntryPoint(appName: string) {
-  return (c: Context) => {
+  return (context: Context) => {
     const basePath = process.env.BASE_PATH ?? "";
 
-    return c.html(html`
+    return context.html(html`
       <!doctype html>
       <html lang="en">
         <head>

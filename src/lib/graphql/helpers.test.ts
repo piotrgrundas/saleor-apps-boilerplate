@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect } from "vite-plus/test";
+import { it } from "@/lib/test/it";
 
 import { getOperationName } from "@/lib/graphql/helpers";
 

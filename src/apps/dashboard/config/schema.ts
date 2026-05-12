@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { appConfigSchema } from "@/application/domain/objects/app-config";
+import { appConfigSchema } from "@/domain/app-config/app-config";
 
 export const appSettingsSchema = z.object({
   publicApiKey: z.string().default(""),

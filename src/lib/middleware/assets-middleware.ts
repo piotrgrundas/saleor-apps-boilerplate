@@ -8,12 +8,12 @@ import { createMiddleware } from "hono/factory";
 export function createAssetsMiddleware(basePath: string) {
   const prefix = `${basePath}/assets/`;
 
-  return createMiddleware(async (c, next) => {
-    if (!c.req.path.startsWith(prefix)) {
+  return createMiddleware(async (context, next) => {
+    if (!context.req.path.startsWith(prefix)) {
       return next();
     }
 
-    const relative = c.req.path.slice(prefix.length); // "{appName}/file.js"
+    const relative = context.req.path.slice(prefix.length); // "{appName}/file.js"
     const slashIdx = relative.indexOf("/");
     if (slashIdx === -1) return next();
 
@@ -24,6 +24,6 @@ export function createAssetsMiddleware(basePath: string) {
     return serveStatic({
       root: "./dist",
       rewriteRequestPath: () => rewrittenPath,
-    })(c, next);
+    })(context, next);
   });
 }

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect } from "vite-plus/test";
+import { it } from "@/lib/test/it";
 
 import { createTestApp } from "@/lib/test/app";
 import { createTestRequest } from "@/lib/test/request";
@@ -7,7 +8,7 @@ import { healthCheckMiddleware } from "./health-check-middleware";
 function createApp() {
   const app = createTestApp();
   app.use("*", healthCheckMiddleware);
-  app.all("*", (c) => c.text("next"));
+  app.all("*", (context) => context.text("next"));
   return app;
 }
 

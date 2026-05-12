@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect } from "vite-plus/test";
+import { it } from "@/lib/test/it";
 
 import { createTestApp } from "@/lib/test/app";
 import { createTestRequest } from "@/lib/test/request";
@@ -7,7 +8,7 @@ import { requestOriginMiddleware } from "./request-origin-middleware";
 function createApp() {
   const app = createTestApp();
   app.use("*", requestOriginMiddleware);
-  app.get("*", (c) => c.text(c.get("origin")));
+  app.get("*", (context) => context.text(context.get("origin")));
   return app;
 }
 

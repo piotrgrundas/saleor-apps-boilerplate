@@ -1,9 +1,9 @@
-import type { JWKSRepository } from "@/application/domain/repositories/jwks-repository";
-import type { JWKSService } from "@/application/domain/services/jwks-service";
-import { JoseJWKSRepository } from "@/application/infrastructure/jwks/jose-jwks-repository";
-import { JoseJWKSService } from "@/application/infrastructure/jwks/jose-jwks-service";
+import type { JWKSRepository } from "@/domain/ports/jwks-repository";
+import type { JWKSService } from "@/domain/ports/jwks-service";
+import { createJoseJWKSRepository } from "@/infrastructure/jwks/jose/jose-jwks-repository";
+import { createJoseJWKSService } from "@/infrastructure/jwks/jose/jose-jwks-service";
 
-export const createJwksRepository = (): JWKSRepository => new JoseJWKSRepository();
+export const createJwksRepository = (): JWKSRepository => createJoseJWKSRepository();
 
 export const createJwksService = (jwksRepository: JWKSRepository): JWKSService =>
-  new JoseJWKSService(jwksRepository);
+  createJoseJWKSService(jwksRepository);

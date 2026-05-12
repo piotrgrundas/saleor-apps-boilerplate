@@ -1,4 +1,4 @@
-import type { Logger } from "@/application/domain/services/logger";
+import type { Logger } from "@/domain/ports/logger";
 
 declare module "hono" {
   interface ContextVariableMap {

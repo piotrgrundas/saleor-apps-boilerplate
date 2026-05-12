@@ -1,26 +1,5 @@
 import { AppBridgeProvider, useAppBridge } from "@saleor/app-sdk/app-bridge";
-import { ThemeProvider } from "@saleor/macaw-ui";
 import type { PropsWithChildren } from "react";
-import { useEffect, useState } from "react";
-
-function ThemeSwitcher({ children }: PropsWithChildren) {
-  const { appBridge } = useAppBridge();
-  const [theme, setTheme] = useState<"defaultLight" | "defaultDark">("defaultLight");
-
-  useEffect(() => {
-    if (!appBridge) return;
-
-    const unsubscribe = appBridge.subscribe("theme", (payload) => {
-      setTheme(payload.theme === "dark" ? "defaultDark" : "defaultLight");
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [appBridge]);
-
-  return <ThemeProvider defaultTheme={theme}>{children}</ThemeProvider>;
-}
 
 function ReadyApp({ children }: PropsWithChildren) {
   const { appBridgeState } = useAppBridge();
@@ -36,7 +15,7 @@ function ReadyApp({ children }: PropsWithChildren) {
     );
   }
 
-  return <ThemeSwitcher>{children}</ThemeSwitcher>;
+  return <>{children}</>;
 }
 
 export function SaleorAppsProvider({ children }: PropsWithChildren) {

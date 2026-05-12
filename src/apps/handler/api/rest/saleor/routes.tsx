@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import pkg from "@/../package.json";
-import { saleorRegisterHeadersSchema } from "@/application/infrastructure/saleor/header/schema";
-import type { SaleorAppManifest } from "@/application/infrastructure/saleor/types";
+import { saleorRegisterHeadersSchema } from "@/infrastructure/saleor/header/schema";
+import type { SaleorAppManifest } from "@/infrastructure/saleor/types";
 import { APP_CONFIG } from "@/apps/handler/config";
 import { ProductUpdatedDocument } from "@/apps/handler/graphql/saleor/subscriptions/ProductUpdateSubscription.generated";
-import { container } from "@/di/container";
+import { container } from "@/apps/handler/di/container";
 import { BadGatewayException, ForbiddenException } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 
@@ -46,6 +46,13 @@ routes.get("/manifest", (context) => {
     ],
   };
 
+  const logger = context.get("logger");
+  logger.info("Info log test hehe");
+  logger.warn("Warn log test hehe");
+  logger.error("Error log test hehe");
+
+  // throw new Error("OH shit I've errorded!", { cause: "hehe" });
+
   return context.json(manifest);
 });
 
@@ -64,12 +71,12 @@ routes.post(
   ),
   async (context) => {
     const { auth_token: authToken } = context.req.valid("json");
-    const installApp = container.get("installApp");
+    const installApp = container.get("installAppUseCase");
 
     const { "saleor-domain": saleorDomain, "saleor-api-url": saleorApiUrl } =
       context.req.valid("header");
 
-    const result = await installApp.execute({
+    const result = await installApp({
       saleorDomain,
       saleorApiUrl,
       authToken,
@@ -77,7 +84,7 @@ routes.post(
     });
 
     if (result.isErr()) {
-      if (result.error.code === "INSTALL_APP_DOMAIN_NOT_ALLOWED_ERROR") {
+      if (result.error[0]?.code === "INSTALL_APP_DOMAIN_NOT_ALLOWED_ERROR") {
         throw new ForbiddenException(result.error);
       }
 

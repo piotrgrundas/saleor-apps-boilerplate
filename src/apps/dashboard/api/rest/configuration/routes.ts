@@ -1,21 +1,21 @@
 import { Hono } from "hono";
 
-import { saleorDomainHeaderSchema } from "@/application/infrastructure/saleor/header/schema";
+import { saleorDomainHeaderSchema } from "@/infrastructure/saleor/header/schema";
 import { appSettingsSchema, dashboardAppConfigSchema } from "@/apps/dashboard/config/schema";
-import { container } from "@/di/container";
+import { container } from "@/apps/dashboard/di/container";
 import { BadRequestError, NotFoundError } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 
 const { appConfigRepository } = container.items;
 
 export const configurationRoutes = new Hono()
-  .get("/", zodValidatorMiddleware("header", saleorDomainHeaderSchema), async (c) => {
-    const { "saleor-domain": saleorDomain } = c.req.valid("header");
+  .get("/", zodValidatorMiddleware("header", saleorDomainHeaderSchema), async (context) => {
+    const { "saleor-domain": saleorDomain } = context.req.valid("header");
 
     const result = await appConfigRepository.get(saleorDomain);
 
     if (result.isErr()) {
-      throw new BadRequestError(result.error.message);
+      throw new BadRequestError(result.error[0]?.message ?? "Config error");
     }
 
     if (!result.value) {
@@ -24,20 +24,20 @@ export const configurationRoutes = new Hono()
 
     const config = dashboardAppConfigSchema.parse(result.value);
 
-    return c.json({ data: config.settings });
+    return context.json({ data: config.settings });
   })
   .post(
     "/",
     zodValidatorMiddleware("header", saleorDomainHeaderSchema),
     zodValidatorMiddleware("json", appSettingsSchema),
-    async (c) => {
-      const { "saleor-domain": saleorDomain } = c.req.valid("header");
-      const settings = c.req.valid("json");
+    async (context) => {
+      const { "saleor-domain": saleorDomain } = context.req.valid("header");
+      const settings = context.req.valid("json");
 
       const getResult = await appConfigRepository.get(saleorDomain);
 
       if (getResult.isErr()) {
-        throw new BadRequestError(getResult.error.message);
+        throw new BadRequestError(getResult.error[0]?.message ?? "Config error");
       }
 
       if (!getResult.value) {
@@ -45,13 +45,13 @@ export const configurationRoutes = new Hono()
       }
 
       const updated = { ...getResult.value, settings };
-      const setResult = await appConfigRepository.set(saleorDomain, updated);
+      const setResult = await appConfigRepository.set({ saleorDomain, config: updated });
 
       if (setResult.isErr()) {
-        throw new BadRequestError(setResult.error.message);
+        throw new BadRequestError(setResult.error[0]?.message ?? "Config error");
       }
 
-      return c.json({ success: true });
+      return context.json({ success: true });
     },
   );
 

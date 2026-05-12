@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import "@saleor/macaw-ui/style";
 
 import { SaleorAppsProvider } from "@/lib/client/components/saleor-apps-provider";
 import { AboutView } from "./client/views/about/about-view";

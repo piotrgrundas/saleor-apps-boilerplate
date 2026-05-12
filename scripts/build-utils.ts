@@ -38,7 +38,10 @@ export function discoverEntryPoints(filename: string): AppEntry[] {
   return entries;
 }
 
-export async function buildClient(app: AppEntry, options: { minify: boolean; nodeEnv: string }) {
+export async function buildClient(
+  app: AppEntry,
+  options: { minify: boolean; nodeEnv: string },
+) {
   const outdir = path.join(DIST_DIR, app.name, "assets");
   fs.mkdirSync(outdir, { recursive: true });
 
@@ -71,5 +74,5 @@ export async function buildClient(app: AppEntry, options: { minify: boolean; nod
     logLevel: "warn",
   });
 
-  console.log(`  ${app.name} → ${outdir}`);
+  console.log(`${app.name} → ${outdir}`);
 }

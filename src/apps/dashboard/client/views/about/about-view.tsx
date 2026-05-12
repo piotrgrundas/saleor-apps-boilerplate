@@ -1,16 +1,10 @@
-import { Box, Text } from "@saleor/macaw-ui";
-
 export function AboutView() {
   const { APP_NAME, APP_VERSION } = window.env;
 
   return (
-    <Box padding={8} display="flex" flexDirection="column" gap={4}>
-      <Text as="h1" size={7}>
-        {APP_NAME}
-      </Text>
-      <Text as="p" size={4} color="default2">
-        Version {APP_VERSION}
-      </Text>
-    </Box>
+    <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <h1>{APP_NAME}</h1>
+      <p style={{ color: "#666" }}>Version {APP_VERSION}</p>
+    </div>
   );
 }

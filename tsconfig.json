@@ -17,7 +17,8 @@
       "@/*": ["./src/*"],
       "@/constants": ["./constants.ts"]
     },
-    "baseUrl": "."
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "constants.ts", "codegen.ts"],
   "exclude": ["node_modules", "dist", "scripts"]

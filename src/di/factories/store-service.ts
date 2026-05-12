@@ -1,6 +1,6 @@
-import type { JWKSService } from "@/application/domain/services/jwks-service";
-import type { StoreService } from "@/application/domain/services/store-service";
-import { SaleorStoreService } from "@/application/infrastructure/saleor/saleor-store-service";
+import type { JWKSService } from "@/domain/ports/jwks-service";
+import type { StoreService } from "@/domain/ports/store-service";
+import { createSaleorStoreService } from "@/infrastructure/store-service/saleor/saleor-store-service";
 
 export const createStoreService = (jwksService: JWKSService): StoreService =>
-  new SaleorStoreService(jwksService);
+  createSaleorStoreService(jwksService);

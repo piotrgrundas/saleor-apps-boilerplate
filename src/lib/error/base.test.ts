@@ -1,19 +1,22 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect } from "vite-plus/test";
+import { it } from "@/lib/test/it";
 
-import type { DomainError } from "@/application/domain/objects/error";
+import type { Error as DomainErr } from "@/domain/errors/base";
 import { DomainException, ValidationException } from "./base";
 
 describe("DomainException", () => {
-  it("serializes context as details when present", () => {
+  it("serializes errors array with first code", () => {
     // given
-    const domainError: DomainError<"VALIDATION_ERROR"> = {
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
-      context: { issues: [{ message: "invalid format", path: ["email"] }] },
-    };
+    const errors: DomainErr[] = [
+      {
+        code: "VALIDATION_ERROR",
+        message: "Validation failed",
+        details: { issues: [{ message: "invalid format", path: ["email"] }] },
+      },
+    ];
 
     // when
-    const serialized = new DomainException(400, domainError).serialize();
+    const serialized = new DomainException(400, errors).serialize();
 
     // then
     expect(serialized).toEqual({
@@ -21,36 +24,41 @@ describe("DomainException", () => {
       message: "Validation failed",
       statusCode: 400,
       code: "VALIDATION_ERROR",
-      details: { issues: [{ message: "invalid format", path: ["email"] }] },
+      errors,
     });
   });
 
-  it("omits details when context is undefined", () => {
+  it("serializes single-error JWKS failure", () => {
     // given
-    const domainError: DomainError<"JWKS_FETCH_ERROR"> = {
-      code: "JWKS_FETCH_ERROR",
-      message: "Failed to fetch JWKS",
-    };
+    const errors: DomainErr[] = [
+      {
+        code: "JWKS_FETCH_ERROR",
+        message: "Failed to fetch JWKS",
+      },
+    ];
 
     // when
-    const serialized = new DomainException(502, domainError).serialize();
+    const serialized = new DomainException(502, errors).serialize();
 
     // then
-    expect(serialized.details).toBeUndefined();
+    expect(serialized.code).toBe("JWKS_FETCH_ERROR");
+    expect(serialized.errors).toEqual(errors);
   });
 });
 
 describe("ValidationException", () => {
   it("maps to HTTP 400", () => {
     // given
-    const domainError: DomainError<"VALIDATION_ERROR"> = {
-      code: "VALIDATION_ERROR",
-      message: "Invalid input",
-      context: { issues: [{ message: "missing required fields", path: [] }] },
-    };
+    const errors: DomainErr[] = [
+      {
+        code: "VALIDATION_ERROR",
+        message: "Invalid input",
+        details: { issues: [{ message: "missing required fields", path: [] }] },
+      },
+    ];
 
     // when
-    const exception = new ValidationException(domainError);
+    const exception = new ValidationException(errors);
 
     // then
     expect(exception.status).toBe(400);
@@ -59,7 +67,7 @@ describe("ValidationException", () => {
       message: "Invalid input",
       statusCode: 400,
       code: "VALIDATION_ERROR",
-      details: { issues: [{ message: "missing required fields", path: [] }] },
+      errors,
     });
   });
 });

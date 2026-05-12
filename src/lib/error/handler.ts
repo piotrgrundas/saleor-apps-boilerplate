@@ -1,18 +1,20 @@
 import type { Context } from "hono";
 
-import type { Logger } from "@/application/domain/services/logger";
+import type { Logger } from "@/domain/ports/logger";
 import { DomainException, HttpError, InternalServerError } from "./base";
 import { getErrorMessage } from "./helpers";
 
-export function createErrorHandler(logger: Logger) {
-  return (err: Error, c: Context) => {
+export function createErrorHandler(fallbackLogger: Logger) {
+  return (err: Error, context: Context) => {
+    const logger = (context.get("logger") as Logger | undefined) ?? fallbackLogger;
+
     if (err instanceof DomainException) {
       logger.warn(`HTTP ${err.status}: ${err.message}`, {
-        code: err.domainError.code,
+        code: err.errors[0]?.code,
         statusCode: err.status,
       });
 
-      return c.json(err.serialize(), { status: err.status });
+      return context.json(err.serialize(), { status: err.status });
     }
 
     if (err instanceof HttpError) {
@@ -21,7 +23,7 @@ export function createErrorHandler(logger: Logger) {
         statusCode: err.status,
       });
 
-      return c.json(err.serialize(), { status: err.status });
+      return context.json(err.serialize(), { status: err.status });
     }
 
     logger.error("Unhandled error", {
@@ -29,6 +31,6 @@ export function createErrorHandler(logger: Logger) {
       stack: err.stack,
     });
 
-    return c.json(new InternalServerError().serialize(), { status: 500 });
+    return context.json(new InternalServerError().serialize(), { status: 500 });
   };
 }

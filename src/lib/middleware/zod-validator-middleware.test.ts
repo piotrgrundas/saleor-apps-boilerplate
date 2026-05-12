@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect } from "vite-plus/test";
+import { it } from "@/lib/test/it";
 import { z } from "zod";
 
 import { ValidationError } from "@/lib/error/base";
@@ -13,12 +14,12 @@ function createApp() {
   });
 
   const app = createTestApp();
-  app.post("/test", zodValidatorMiddleware("json", schema), (c) => c.json({ ok: true }));
-  app.onError((err, c) => {
+  app.post("/test", zodValidatorMiddleware("json", schema), (context) => context.json({ ok: true }));
+  app.onError((err, context) => {
     if (err instanceof ValidationError) {
-      return c.json({ error: "Validation failed", details: err.details }, 400);
+      return context.json({ error: "Validation failed", details: err.details }, 400);
     }
-    return c.json({ error: "Unknown" }, 500);
+    return context.json({ error: "Unknown" }, 500);
   });
 
   return app;
@@ -68,12 +69,12 @@ describe("zodValidatorMiddleware", () => {
     // given
     const querySchema = z.object({ page: z.string().min(1) });
     const app = createTestApp();
-    app.get("/test", zodValidatorMiddleware("query", querySchema), (c) => c.json({ ok: true }));
-    app.onError((err, c) => {
+    app.get("/test", zodValidatorMiddleware("query", querySchema), (context) => context.json({ ok: true }));
+    app.onError((err, context) => {
       if (err instanceof ValidationError) {
-        return c.json({ error: "Validation failed" }, 400);
+        return context.json({ error: "Validation failed" }, 400);
       }
-      return c.json({ error: "Unknown" }, 500);
+      return context.json({ error: "Unknown" }, 500);
     });
 
     // when & then

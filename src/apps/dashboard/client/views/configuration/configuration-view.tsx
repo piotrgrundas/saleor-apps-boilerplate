@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { actions, useAppBridge } from "@saleor/app-sdk/app-bridge";
-import { Box, Button, Input, Text } from "@saleor/macaw-ui";
 import { hc } from "hono/client";
 import { useForm } from "react-hook-form";
 import { useLoaderData } from "react-router-dom";
@@ -82,49 +81,71 @@ export function ConfigurationView() {
   };
 
   return (
-    <Box padding={8} display="flex" flexDirection="column" gap={6}>
-      <Box>
-        <Text as="h1" size={7}>
-          Configuration
-        </Text>
-        <Text as="p" size={4} color="default2">
-          Manage your API keys for this Saleor instance.
-        </Text>
-      </Box>
+    <div style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+      <div>
+        <h1>Configuration</h1>
+        <p style={{ color: "#666" }}>Manage your API keys for this Saleor instance.</p>
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Box
-          display="flex"
-          flexDirection="column"
-          gap={5}
-          borderWidth={1}
-          borderStyle="solid"
-          borderColor="default1"
-          borderRadius={4}
-          padding={6}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            border: "1px solid #ddd",
+            borderRadius: "0.5rem",
+            padding: "1.5rem",
+          }}
         >
-          <Input
-            label="Public API Key"
-            {...register("publicApiKey")}
-            error={!!errors.publicApiKey}
-            helperText={errors.publicApiKey?.message}
-          />
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span>Public API Key</span>
+            <input
+              {...register("publicApiKey")}
+              aria-invalid={!!errors.publicApiKey}
+              style={{ padding: "0.5rem", border: "1px solid #ccc", borderRadius: "0.25rem" }}
+            />
+            {errors.publicApiKey?.message ? (
+              <span style={{ color: "#c00", fontSize: "0.875rem" }}>
+                {errors.publicApiKey.message}
+              </span>
+            ) : null}
+          </label>
 
-          <Input
-            type="password"
-            label="Private API Key"
-            {...register("privateApiKey")}
-            error={!!errors.privateApiKey}
-            helperText={errors.privateApiKey?.message}
-          />
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span>Private API Key</span>
+            <input
+              type="password"
+              {...register("privateApiKey")}
+              aria-invalid={!!errors.privateApiKey}
+              style={{ padding: "0.5rem", border: "1px solid #ccc", borderRadius: "0.25rem" }}
+            />
+            {errors.privateApiKey?.message ? (
+              <span style={{ color: "#c00", fontSize: "0.875rem" }}>
+                {errors.privateApiKey.message}
+              </span>
+            ) : null}
+          </label>
 
-          <Box>
-            <Button type="submit" disabled={isSubmitting} size="large">
+          <div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                padding: "0.75rem 1.5rem",
+                background: "#000",
+                color: "#fff",
+                border: "none",
+                borderRadius: "0.25rem",
+                cursor: isSubmitting ? "default" : "pointer",
+                opacity: isSubmitting ? 0.6 : 1,
+              }}
+            >
               {isSubmitting ? "Saving..." : "Save"}
-            </Button>
-          </Box>
-        </Box>
+            </button>
+          </div>
+        </div>
       </form>
-    </Box>
+    </div>
   );
 }

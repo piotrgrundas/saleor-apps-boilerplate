@@ -1,44 +1,43 @@
 import type { Context } from "hono";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect } from "vite-plus/test";
 
+import { it } from "@/lib/test/it";
 import { createTestApp } from "@/lib/test/app";
 import { createMockLogger } from "@/lib/test/mock";
 import { createTestRequest } from "@/lib/test/request";
 import { createLoggingMiddleware } from "./logging-middleware";
 
 function createSpyLogger() {
-  const infoCalls: Array<{ message: string; meta?: Record<string, unknown> }> = [];
+  const debugCalls: Array<{ message: string; meta?: Record<string, unknown> }> = [];
   const withTagCalls: string[] = [];
   const logger = createMockLogger();
 
-  logger.info = (message, meta) => {
-    infoCalls.push({ message, meta });
+  logger.debug = (message, meta) => {
+    debugCalls.push({ message, meta });
   };
   logger.withTag = (tag: string) => {
     withTagCalls.push(tag);
     return logger;
   };
 
-  return { logger, infoCalls, withTagCalls };
+  return { logger, debugCalls, withTagCalls };
 }
 
 describe("createLoggingMiddleware", () => {
   it("logs request entry and response exit", async () => {
     // given
-    const { logger, infoCalls } = createSpyLogger();
+    const { logger, debugCalls } = createSpyLogger();
     const app = createTestApp();
     app.use("*", createLoggingMiddleware(logger));
-    app.get("/test", (c) => c.text("ok"));
+    app.get("/test", (context) => context.text("ok"));
 
     // when
     await app.request(createTestRequest("/test", { method: "GET" }));
 
     // then
-    expect(infoCalls).toHaveLength(2);
-    expect(infoCalls[0].message).toContain("→ GET /test");
-    expect(infoCalls[1].message).toContain("← GET /test");
-    expect(infoCalls[1].meta?.status).toBe(200);
-    expect(infoCalls[1].meta?.duration).toBeTypeOf("number");
+    expect(debugCalls).toHaveLength(2);
+    expect(debugCalls[0].message).toBe("GET ▶ /test");
+    expect(debugCalls[1].message).toMatch(/^GET ◀ 200 \/test \(\d+ms\)$/);
   });
 
   it("sets logger in context", async () => {
@@ -47,9 +46,9 @@ describe("createLoggingMiddleware", () => {
     let contextLogger: unknown;
     const app = createTestApp();
     app.use("*", createLoggingMiddleware(logger));
-    app.get("/test", (c: Context) => {
-      contextLogger = c.get("logger");
-      return c.text("ok");
+    app.get("/test", (context: Context) => {
+      contextLogger = context.get("logger");
+      return context.text("ok");
     });
 
     // when
@@ -59,37 +58,67 @@ describe("createLoggingMiddleware", () => {
     expect(contextLogger).toBeDefined();
   });
 
-  it.each([
-    { desc: "x-request-id present", requestId: "req-123", expectedTag: "req-123" },
-    { desc: "x-request-id missing", requestId: undefined, expectedTag: "no-request-id" },
-  ])("tags logger with $desc", async ({ requestId, expectedTag }) => {
+  it("tags logger with service name", async () => {
     // given
     const { logger, withTagCalls } = createSpyLogger();
     const app = createTestApp();
-    app.use("*", createLoggingMiddleware(logger));
-    app.get("/test", (c) => c.text("ok"));
-    const headers: Record<string, string> = {};
-    if (requestId) headers["x-request-id"] = requestId;
-
-    // when
-    await app.request(createTestRequest("/test", { headers }));
-
-    // then
-    expect(withTagCalls).toContain(expectedTag);
-  });
-
-  it("includes extra meta in log entries", async () => {
-    // given
-    const { logger, infoCalls } = createSpyLogger();
-    const app = createTestApp();
-    app.use("*", createLoggingMiddleware(logger, { appName: "test-app" }));
-    app.get("/test", (c) => c.text("ok"));
+    app.use("*", createLoggingMiddleware(logger, { service: "handler" }));
+    app.get("/test", (context) => context.text("ok"));
 
     // when
     await app.request(createTestRequest("/test", { method: "GET" }));
 
     // then
-    expect(infoCalls[0].meta?.appName).toBe("test-app");
-    expect(infoCalls[1].meta?.appName).toBe("test-app");
+    expect(withTagCalls).toContain("handler");
+  });
+
+  it("falls back to 'app' tag when no service given", async () => {
+    // given
+    const { logger, withTagCalls } = createSpyLogger();
+    const app = createTestApp();
+    app.use("*", createLoggingMiddleware(logger));
+    app.get("/test", (context) => context.text("ok"));
+
+    // when
+    await app.request(createTestRequest("/test", { method: "GET" }));
+
+    // then
+    expect(withTagCalls).toContain("app");
+  });
+
+  it.each([
+    { desc: "favicon.ico", path: "/favicon.ico" },
+    { desc: "assets path", path: "/assets/main.css" },
+    { desc: "static path", path: "/static/logo.png" },
+    { desc: "js file", path: "/app.js" },
+  ])("skips logging for $desc", async ({ path }) => {
+    // given
+    const { logger, debugCalls } = createSpyLogger();
+    const app = createTestApp();
+    app.use("*", createLoggingMiddleware(logger));
+    app.get(path, (context) => context.text("ok"));
+
+    // when
+    await app.request(createTestRequest(path, { method: "GET" }));
+
+    // then
+    expect(debugCalls).toHaveLength(0);
+  });
+
+  it("respects custom skip predicate", async () => {
+    // given
+    const { logger, debugCalls } = createSpyLogger();
+    const app = createTestApp();
+    app.use(
+      "*",
+      createLoggingMiddleware(logger, { skip: (context) => context.req.path.startsWith("/health") }),
+    );
+    app.get("/health", (context) => context.text("ok"));
+
+    // when
+    await app.request(createTestRequest("/health", { method: "GET" }));
+
+    // then
+    expect(debugCalls).toHaveLength(0);
   });
 });

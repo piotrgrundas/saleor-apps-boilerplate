@@ -1,15 +1,16 @@
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-import type { DomainError, DomainErrorCode } from "@/application/domain/objects/error";
+import type { Error as DomainErr, ErrorCode } from "@/domain/errors/base";
 
-export interface SerializedError {
+export type SerializedError = {
   error: string;
   message: string;
   statusCode: number;
-  code?: DomainErrorCode;
+  code?: ErrorCode;
+  errors?: DomainErr[];
   details?: unknown;
-}
+};
 
 export class HttpError extends HTTPException {
   public readonly error: string;
@@ -68,48 +69,74 @@ export class ValidationError extends BadRequestError {
 }
 
 export class DomainException extends HttpError {
-  public readonly domainError: DomainError;
+  public readonly errors: DomainErr[];
 
-  constructor(statusCode: ContentfulStatusCode, domainError: DomainError) {
-    super(statusCode, domainError.code, domainError.message);
-    this.domainError = domainError;
+  constructor(statusCode: ContentfulStatusCode, errors: DomainErr[]) {
+    const [first] = errors;
+    super(statusCode, first?.code ?? "DOMAIN_ERROR", first?.message ?? "Domain error");
+    this.errors = errors;
   }
 
   override serialize(): SerializedError {
+    const [first] = this.errors;
     return {
       ...super.serialize(),
-      code: this.domainError.code,
-      ...(this.domainError.context ? { details: this.domainError.context } : {}),
+      ...(first ? { code: first.code } : {}),
+      errors: this.errors,
     };
   }
 }
 
+export class DomainValidationError extends DomainException {
+  constructor(errors: DomainErr[]) {
+    super(400, errors);
+  }
+}
+
+export class DomainUnauthorizedError extends DomainException {
+  constructor(errors: DomainErr[]) {
+    super(401, errors);
+  }
+}
+
+export class DomainForbiddenError extends DomainException {
+  constructor(errors: DomainErr[]) {
+    super(403, errors);
+  }
+}
+
+export class DomainNotFoundError extends DomainException {
+  constructor(errors: DomainErr[]) {
+    super(404, errors);
+  }
+}
+
 export class ForbiddenException extends DomainException {
-  constructor(domainError: DomainError) {
-    super(403, domainError);
+  constructor(errors: DomainErr[]) {
+    super(403, errors);
   }
 }
 
 export class BadGatewayException extends DomainException {
-  constructor(domainError: DomainError) {
-    super(502, domainError);
+  constructor(errors: DomainErr[]) {
+    super(502, errors);
   }
 }
 
 export class UnprocessableEntityException extends DomainException {
-  constructor(domainError: DomainError) {
-    super(422, domainError);
+  constructor(errors: DomainErr[]) {
+    super(422, errors);
   }
 }
 
 export class ServiceUnavailableException extends DomainException {
-  constructor(domainError: DomainError) {
-    super(503, domainError);
+  constructor(errors: DomainErr[]) {
+    super(503, errors);
   }
 }
 
 export class ValidationException extends DomainException {
-  constructor(domainError: DomainError) {
-    super(400, domainError);
+  constructor(errors: DomainErr[]) {
+    super(400, errors);
   }
 }

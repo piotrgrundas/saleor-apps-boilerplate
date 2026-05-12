@@ -1,15 +1,34 @@
 import { ok } from "neverthrow";
+import { vi } from "vite-plus/test";
 
-import type { AppConfig } from "@/application/domain/objects/app-config";
-import type { AppConfigRepository } from "@/application/domain/repositories/app-config-repository";
-import type { JWKSRepository } from "@/application/domain/repositories/jwks-repository";
-import type { JWKSService } from "@/application/domain/services/jwks-service";
-import type { JWTService } from "@/application/domain/services/jwt-service";
-import type { Logger } from "@/application/domain/services/logger";
-import type { StoreService } from "@/application/domain/services/store-service";
+import type { AppConfig } from "@/domain/app-config/app-config";
+import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
+import type { JWKSRepository } from "@/domain/ports/jwks-repository";
+import type { JWKSService } from "@/domain/ports/jwks-service";
+import type { JWTService } from "@/domain/ports/jwt-service";
+import type { Logger } from "@/domain/ports/logger";
+import type { StoreService } from "@/domain/ports/store-service";
+
+/**
+ * Proxy mock that auto-creates a `vi.fn()` for any accessed property.
+ * Use against TS `type`-shaped ports — returns a value typed as the port,
+ * so `vi.mocked(mock.method)` works.
+ */
+export const MagicMock = <T extends object>(): T => {
+  const cache = new Map<string | symbol, ReturnType<typeof vi.fn>>();
+  return new Proxy({} as T, {
+    get(_target, prop) {
+      if (!cache.has(prop)) {
+        cache.set(prop, vi.fn());
+      }
+      return cache.get(prop);
+    },
+  });
+};
 
 export function createMockLogger(): Logger {
   return {
+    trace: () => {},
     debug: () => {},
     info: () => {},
     warn: () => {},
@@ -27,7 +46,7 @@ export function createMockAppConfigRepository(
     async get(saleorDomain) {
       return ok(configs.get(saleorDomain) ?? null);
     },
-    async set(saleorDomain, config) {
+    async set({ saleorDomain, config }) {
       configs.set(saleorDomain, config);
       return ok(undefined);
     },

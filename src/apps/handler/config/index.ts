@@ -8,10 +8,10 @@ const configSchema = z
   .object({
     ALLOWED_DOMAINS: z.array(z.string()).default(["*"]),
     SERVICE: z.string().default("handler"),
-    SECRET_MANAGER_APP_CONFIG_PATH: z.string(),
+    // SECRET_MANAGER_APP_CONFIG_PATH: z.string(),
     SENTRY_DSN: z.string().url().optional(),
   })
-  .and(saleorAppConfigSchema)
+  // .and(saleorAppConfigSchema)
   .and(baseConfigSchema)
   .and(awsConfigSchema);
 

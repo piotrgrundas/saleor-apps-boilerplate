@@ -37,8 +37,8 @@ const yoga = createYoga<GraphQLContext>({
 
 const graphqlApp = new Hono();
 
-graphqlApp.all("/*", async (c) => {
-  const response = await yoga.handle(c.req.raw);
+graphqlApp.all("/*", async (context) => {
+  const response = await yoga.handle(context.req.raw);
   return response;
 });
 

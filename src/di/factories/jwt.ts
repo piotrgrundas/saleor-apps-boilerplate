@@ -1,4 +1,4 @@
-import type { JWTService } from "@/application/domain/services/jwt-service";
-import { JoseJWTService } from "@/application/infrastructure/jwt/jose-jwt-service";
+import type { JWTService } from "@/domain/ports/jwt-service";
+import { createJoseJWTService } from "@/infrastructure/jwt/jose/jose-jwt-service";
 
-export const createJwtService = (): JWTService => new JoseJWTService();
+export const createJwtService = (): JWTService => createJoseJWTService();
