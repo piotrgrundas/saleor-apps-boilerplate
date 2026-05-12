@@ -3,8 +3,12 @@ import { err, ok } from "neverthrow";
 
 import type { AsyncResult } from "@/domain/errors/result";
 import type { JwksErrorCode } from "@/domain/errors/scopes/jwks";
-import type { JsonWebKeySet, JWKSRepositoryFactory } from "@/domain/ports/jwks-repository";
+import type {
+  JsonWebKeySet,
+  JWKSRepositoryFactory,
+} from "@/domain/ports/jwks-repository";
 import { getErrorMessage } from "@/lib/error/helpers";
+import { Logger } from "@/domain/ports/logger";
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -13,10 +17,16 @@ const jwksUrlFor = (issuer: string): string => {
   return `${origin}/.well-known/jwks.json`;
 };
 
-export const createJwksRepositoryFactory: JWKSRepositoryFactory = ({ logger }) => {
+export const createJwksRepositoryFactory: JWKSRepositoryFactory = () => {
   const cache = new NodeCache<JsonWebKeySet>({ stdTTL: CACHE_TTL_SECONDS });
 
-  const fetchJwks = async (jwksUrl: string): AsyncResult<JsonWebKeySet, JwksErrorCode> => {
+  const fetchJwks = async ({
+    jwksUrl,
+    logger,
+  }: {
+    jwksUrl: string;
+    logger: Logger;
+  }): AsyncResult<JsonWebKeySet, JwksErrorCode> => {
     try {
       const response = await fetch(jwksUrl);
 
@@ -46,23 +56,30 @@ export const createJwksRepositoryFactory: JWKSRepositoryFactory = ({ logger }) =
   };
 
   return {
-    async get({ issuer, forceRefresh = false }) {
+    async get({ issuer, forceRefresh = false }, ctx) {
       const jwksUrl = jwksUrlFor(issuer);
 
       if (!forceRefresh) {
         const cached = cache.get(jwksUrl) as JsonWebKeySet | undefined;
 
-        if (cached) return ok(cached);
+        if (cached) {
+          ctx.logger.debug("JWKS cache hit", { jwksUrl });
+          return ok(cached);
+        }
       }
 
-      const result = await fetchJwks(jwksUrl);
+      const result = await fetchJwks({ jwksUrl, logger: ctx.logger });
 
-      if (result.isOk()) cache.set(jwksUrl, result.value);
+      if (result.isOk()) {
+        cache.set(jwksUrl, result.value);
+      } else {
+        ctx.logger.error("JWKS fetch failed", { jwksUrl, cause: result.error });
+      }
 
       return result;
     },
 
-    async set({ issuer, jwks }) {
+    async set({ issuer, jwks }, _ctx) {
       cache.set(jwksUrlFor(issuer), jwks);
 
       return ok(undefined);

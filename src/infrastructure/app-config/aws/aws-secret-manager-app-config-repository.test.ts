@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, vi } from "vite-plus/test";
 
 import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
 import { it } from "@/lib/test/it";
+import { createTestContext } from "@/lib/test/mock";
 
 import { createAwsSecretManagerAppConfigRepository } from "./aws-secret-manager-app-config-repository";
 
@@ -16,6 +17,15 @@ vi.mock("@aws-sdk/client-secrets-manager", () => ({
   },
   PutSecretValueCommand: class {
     constructor(public input: unknown) {}
+  },
+  CreateSecretCommand: class {
+    constructor(public input: unknown) {}
+  },
+  ResourceNotFoundException: class extends Error {
+    constructor() {
+      super("ResourceNotFoundException");
+      this.name = "ResourceNotFoundException";
+    }
   },
 }));
 
@@ -43,7 +53,7 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.get("unknown.domain");
+      const result = await repo.get("unknown.domain", createTestContext());
 
       // then
       expect(result.isOk()).toBe(true);
@@ -57,7 +67,7 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.get(TEST_CONFIG.saleorDomain);
+      const result = await repo.get(TEST_CONFIG.saleorDomain, createTestContext());
 
       // then
       expect(result.isOk()).toBe(true);
@@ -70,7 +80,7 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.get("any.domain");
+      const result = await repo.get("any.domain", createTestContext());
 
       // then
       expect(result.isOk()).toBe(true);
@@ -83,7 +93,7 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.get("any.domain");
+      const result = await repo.get("any.domain", createTestContext());
 
       // then
       expect(result.isErr()).toBe(true);
@@ -96,7 +106,7 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.get("any.domain");
+      const result = await repo.get("any.domain", createTestContext());
 
       // then
       expect(result.isErr()).toBe(true);
@@ -114,10 +124,10 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.set({
-        saleorDomain: TEST_CONFIG.saleorDomain,
-        config: TEST_CONFIG,
-      });
+      const result = await repo.set(
+        { saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG },
+        createTestContext(),
+      );
 
       // then
       expect(result.isOk()).toBe(true);
@@ -132,10 +142,10 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.set({
-        saleorDomain: TEST_CONFIG.saleorDomain,
-        config: TEST_CONFIG,
-      });
+      const result = await repo.set(
+        { saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG },
+        createTestContext(),
+      );
 
       // then
       expect(result.isErr()).toBe(true);
@@ -153,7 +163,7 @@ describe("createAwsSecretManagerAppConfigRepository", () => {
       const repo = createAwsSecretManagerAppConfigRepository(OPTIONS);
 
       // when
-      const result = await repo.delete(TEST_CONFIG.saleorDomain);
+      const result = await repo.delete(TEST_CONFIG.saleorDomain, createTestContext());
 
       // then
       expect(result.isOk()).toBe(true);

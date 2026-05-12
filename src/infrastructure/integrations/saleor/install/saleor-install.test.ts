@@ -8,7 +8,7 @@ import { it } from "@/lib/test/it";
 import {
   createMockAppConfigRepository,
   createMockJwksRepository,
-  createMockLogger,
+  createTestContext,
 } from "@/lib/test/mock";
 
 import { createSaleorInstall } from "./saleor-install";
@@ -32,11 +32,10 @@ describe("createSaleorInstall", () => {
       appConfigRepository: createMockAppConfigRepository(),
       fetchAppId: okAppId("app-123"),
       jwksRepository: createMockJwksRepository(),
-      logger: createMockLogger(),
     });
 
     // when
-    const result = await install(INPUT);
+    const result = await install(INPUT, createTestContext());
 
     // then
     expect(result.isOk()).toBe(true);
@@ -49,14 +48,14 @@ describe("createSaleorInstall", () => {
       appConfigRepository: configRepo,
       fetchAppId: okAppId("app-123"),
       jwksRepository: createMockJwksRepository(),
-      logger: createMockLogger(),
     });
+    const ctx = createTestContext();
 
     // when
-    await install(INPUT);
+    await install(INPUT, ctx);
 
     // then
-    const saved = await configRepo.get(INPUT.saleorDomain);
+    const saved = await configRepo.get(INPUT.saleorDomain, ctx);
     expect(saved.isOk()).toBe(true);
     expect(saved._unsafeUnwrap()).toEqual({
       saleorDomain: INPUT.saleorDomain,
@@ -72,14 +71,16 @@ describe("createSaleorInstall", () => {
       appConfigRepository: createMockAppConfigRepository(),
       fetchAppId: okAppId("app-123"),
       jwksRepository: createMockJwksRepository(),
-      logger: createMockLogger(),
     });
 
     // when
-    const result = await install({
-      ...INPUT,
-      saleorDomain: "evil.example.com",
-    });
+    const result = await install(
+      {
+        ...INPUT,
+        saleorDomain: "evil.example.com",
+      },
+      createTestContext(),
+    );
 
     // then
     const [error] = result._unsafeUnwrapErr();
@@ -95,11 +96,10 @@ describe("createSaleorInstall", () => {
       appConfigRepository: createMockAppConfigRepository(),
       fetchAppId: failingFetch,
       jwksRepository: createMockJwksRepository(),
-      logger: createMockLogger(),
     });
 
     // when
-    const result = await install(INPUT);
+    const result = await install(INPUT, createTestContext());
 
     // then
     const [error] = result._unsafeUnwrapErr();
@@ -120,11 +120,10 @@ describe("createSaleorInstall", () => {
       appConfigRepository: failingRepo,
       fetchAppId: okAppId(),
       jwksRepository: createMockJwksRepository(),
-      logger: createMockLogger(),
     });
 
     // when
-    const result = await install(INPUT);
+    const result = await install(INPUT, createTestContext());
 
     // then
     const [error] = result._unsafeUnwrapErr();
@@ -144,11 +143,10 @@ describe("createSaleorInstall", () => {
       appConfigRepository: createMockAppConfigRepository(),
       fetchAppId: okAppId(),
       jwksRepository: failingJwks,
-      logger: createMockLogger(),
     });
 
     // when
-    const result = await install(INPUT);
+    const result = await install(INPUT, createTestContext());
 
     // then
     const [error] = result._unsafeUnwrapErr();

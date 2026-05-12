@@ -1,5 +1,6 @@
 import { err, ok } from "neverthrow";
 
+import type { Context } from "@/domain/context";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { SaleorErrorCode } from "@/domain/errors/scopes/saleor";
 import {
@@ -16,9 +17,10 @@ export type FetchSaleorAppIdInput = {
 
 export type FetchSaleorAppId = (
   input: FetchSaleorAppIdInput,
+  ctx: Context,
 ) => AsyncResult<string, SaleorErrorCode>;
 
-export const fetchSaleorAppId: FetchSaleorAppId = async ({ apiUrl, token }) => {
+export const fetchSaleorAppId: FetchSaleorAppId = async ({ apiUrl, token }, _ctx) => {
   let response: Response;
   try {
     response = await fetch(apiUrl, {

@@ -16,9 +16,9 @@ export const createGlobalContainer = (config: GlobalContainerConfig) =>
     .add({
       logger: () => createLogger({ level: config.LOG_LEVEL }),
     })
-    .add((ctx) => ({
-      jwksRepository: () => createJwksRepositoryFactory({ logger: ctx.logger }),
-    }))
+    .add({
+      jwksRepository: () => createJwksRepositoryFactory(),
+    })
     .add((ctx) => ({
       joseAuthService: () => createJoseAuthService({ jwksRepository: ctx.jwksRepository }),
     }))

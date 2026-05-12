@@ -77,6 +77,7 @@ A use-case is a function. It is produced by a **factory function** that closes o
 // src/application/start-generation-use-case.ts
 import { err, ok } from "neverthrow";
 
+import type { Context } from "@/domain/context.ts";
 import type { AsyncResult } from "@/domain/errors/result.ts";
 import type { GenerationControlErrorCode } from "@/domain/errors/scopes/generation-control.ts";
 import type { GenerationStateErrorCode } from "@/domain/errors/scopes/generation-state.ts";
@@ -84,12 +85,10 @@ import type { SelfInvokerErrorCode } from "@/domain/errors/scopes/self-invoker.t
 import { findActiveJob } from "@/domain/job/job.ts";
 import type { JobRepository } from "@/domain/ports/job-repository.ts";
 import type { JobScheduler } from "@/domain/ports/job-scheduler.ts";
-import type { LoggingProvider } from "@/lib/logging/types.ts";
 
 type Deps = {
   jobs: JobRepository;
   scheduler: JobScheduler;
-  logger: LoggingProvider;
 };
 
 export type StartGenerationErrorCode =
@@ -98,9 +97,9 @@ export type StartGenerationErrorCode =
   | SelfInvokerErrorCode;
 
 export const startGenerationUseCase =
-  ({ jobs, scheduler, logger }: Deps) =>
-  async (): AsyncResult<void, StartGenerationErrorCode> => {
-    const loadResult = await jobs.load();
+  ({ jobs, scheduler }: Deps) =>
+  async (_input: void, ctx: Context): AsyncResult<void, StartGenerationErrorCode> => {
+    const loadResult = await jobs.load(ctx);
     if (loadResult.isErr()) return err(loadResult.error);
 
     const active = findActiveJob(loadResult.value);
@@ -114,9 +113,9 @@ export const startGenerationUseCase =
       ]);
     }
 
-    logger.info("CONTROL: triggering manual generation start.");
+    ctx.logger.info("CONTROL: triggering manual generation start.");
 
-    const triggerResult = await scheduler.triggerNext();
+    const triggerResult = await scheduler.triggerNext(ctx);
     if (triggerResult.isErr()) return err(triggerResult.error);
 
     return ok(undefined);
@@ -125,10 +124,30 @@ export const startGenerationUseCase =
 export type StartGenerationUseCase = ReturnType<typeof startGenerationUseCase>;
 ```
 
-- Factory takes `Deps` (a `type` containing port-typed dependencies). Closes over them.
-- Returns the use-case function. Caller calls `useCase(input)` — **no `.execute()`**.
+- Factory takes `Deps` (a `type` containing port-typed dependencies). Closes over them. **No `logger` in `Deps`** — logger lives in `Context`.
+- Returns the use-case function. Caller calls `useCase(input, ctx)` — **no `.execute()`**, ctx always last.
 - Export both the factory (`startGenerationUseCase`) and the bound type (`StartGenerationUseCase`) — `UseCase` suffix on both. The verb-only name (`startGeneration`) is reserved for domain transitions or pure helpers.
 - Error union typed by scope, never literal. Compose unions across multiple ports.
+
+## Context — request-scoped data
+
+`src/domain/context.ts` defines `Context`, threaded as the **last argument** through every fallible operation (port methods, use-cases, procedures, plain async fns that may log/fail):
+
+```typescript
+export type Context = {
+  logger: Logger;
+  // future: signal?, deadline?, tenantId?, traceparent?
+};
+```
+
+- **Every fallible method takes `(input, ctx: Context)`**. Reserve the slot even if today only logger is needed.
+- **Logger lives in `Context`, NOT in `Deps`**. Deps = construction-time bindings. Context = per-call request-scoped data that varies (request logger has `withContext({ requestId, path })` enrichment).
+- **Caller constructs ctx at boundary** (route handler, lambda entry, CLI). Threaded inward through every call. Adapters use `ctx.logger` directly — request-tagged logs without infra depending on middleware.
+- **Tests pass `createTestContext()`** helper from `@/lib/test/mock`. No AsyncLocalStorage, no globals.
+
+Adding new request-scoped data (e.g. `signal: AbortSignal`)? Add field to `Context`. Every existing call site already accepts it. Zero retrofit.
+
+Full playbook (Deps-vs-Context table, ALS rejection rationale, mistakes): **[references/context.md](references/context.md)**.
 
 ## Ports
 
@@ -136,10 +155,12 @@ export type StartGenerationUseCase = ReturnType<typeof startGenerationUseCase>;
 
 ```typescript
 // src/domain/ports/storage.ts
+import type { Context } from "../context";
+
 export type Storage = {
-  get(key: string): AsyncResult<Uint8Array | null, StorageErrorCode>;
-  put(input: StoragePutInput): AsyncResult<{ written: boolean }, StorageErrorCode>;
-  delete(key: string): AsyncResult<void, StorageErrorCode>;
+  get(key: string, ctx: Context): AsyncResult<Uint8Array | null, StorageErrorCode>;
+  put(input: StoragePutInput, ctx: Context): AsyncResult<{ written: boolean }, StorageErrorCode>;
+  delete(key: string, ctx: Context): AsyncResult<void, StorageErrorCode>;
   // ...
 };
 ```
@@ -172,16 +193,20 @@ src/infrastructure/
 export const createS3Storage = (bucket: string): Storage => {
   const client = new S3Client();
   return {
-    async get(key) {
+    async get(key, ctx) {
+      ctx.logger.debug("s3 get", { key });
       /* ... */
     },
-    async put({ key, body, ifAbsent }) {
+    async put({ key, body, ifAbsent }, ctx) {
       /* ... */
     },
     // ...
   };
 };
 ```
+
+- Adapter methods accept `ctx: Context` as the last argument (matches port). Use `ctx.logger` for adapter-internal logs — request-tagged automatically.
+- No `logger` in factory opts. Factory opts are construction-time config (bucket name, region, endpoint).
 
 - Factory returns the port type explicitly: `(...): Storage =>`. Lets TS verify shape at the boundary.
 - Wrap external throwables with plain `try/catch` and translate to `err([...])`. Never re-throw.
@@ -363,6 +388,10 @@ Full handler body, class definitions: **[references/errors.md](references/errors
 
 ## Anti-patterns
 
+- ❌ `logger` in `Deps` of a use-case / procedure / adapter factory — logger lives in `Context`, threaded per call. Deps is construction-time only.
+- ❌ Port method without `ctx: Context` as last arg — every fallible op accepts ctx, even if today it doesn't use any field. Reserves the slot for future fields (signal, deadline, etc.).
+- ❌ Reading ambient request state (`AsyncLocalStorage`, globals, `process.env` mid-call) inside an adapter — adapter depends on `domain/context.ts` only. No reach into runtime/middleware.
+- ❌ Plain function dep that may log/fail but skips `ctx` — `FetchSaleorAppId` and similar take `(input, ctx)` even if internals don't log yet.
 - ❌ `abstract class` for a port — use `type`.
 - ❌ Port-implementing class in `infrastructure/` (`class S3Storage implements Storage`) — use factory function (`createS3Storage(...): Storage`).
 - ❌ Flat adapter file `infrastructure/<port>/<vendor>-<port>.ts` without vendor subfolder — must be `infrastructure/<port>/<vendor>/<vendor>-<port>.ts`. Vendor folder isolates vendor-specific helpers (SDKs, generated code, schemas).
@@ -411,4 +440,5 @@ Full handler body, class definitions: **[references/errors.md](references/errors
 - [examples.md](references/examples.md) — end-to-end worked example (port + adapter + use-case + DI + route).
 - [neverthrow-api.md](references/neverthrow-api.md) — primitives + house style.
 - [integrations.md](references/integrations.md) — three folder patterns, integrations vs DI, plain functions vs services, factory-of-instance shape, schemas co-located.
+- [context.md](references/context.md) — `Context` shape, Deps-vs-Context split, threading rules, ALS rejection rationale.
 - External: [iti](https://itijs.org/), [neverthrow](https://github.com/supermacro/neverthrow#api-documentation).

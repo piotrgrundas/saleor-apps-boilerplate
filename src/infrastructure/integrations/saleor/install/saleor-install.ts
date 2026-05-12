@@ -1,10 +1,10 @@
 import { err, ok } from "neverthrow";
 
+import type { Context } from "@/domain/context";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { SaleorInstallErrorCode } from "@/domain/errors/scopes/saleor-install";
 import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
 import type { JWKSRepository } from "@/domain/ports/jwks-repository";
-import type { Logger } from "@/domain/ports/logger";
 import type { FetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
 import { isDomainAllowed } from "@/lib/utils/allowlist";
 
@@ -19,12 +19,14 @@ type Deps = {
   appConfigRepository: AppConfigRepository;
   fetchAppId: FetchSaleorAppId;
   jwksRepository: JWKSRepository;
-  logger: Logger;
 };
 
 export const createSaleorInstall =
-  ({ appConfigRepository, fetchAppId, jwksRepository, logger }: Deps) =>
-  async (input: SaleorInstallInput): AsyncResult<void, SaleorInstallErrorCode> => {
+  ({ appConfigRepository, fetchAppId, jwksRepository }: Deps) =>
+  async (
+    input: SaleorInstallInput,
+    ctx: Context,
+  ): AsyncResult<void, SaleorInstallErrorCode> => {
     const { saleorDomain, saleorApiUrl, authToken, allowedDomains } = input;
 
     if (!isDomainAllowed(saleorDomain, allowedDomains)) {
@@ -36,11 +38,11 @@ export const createSaleorInstall =
       ]);
     }
 
-    logger.info(`Installing app for domain: ${saleorDomain}`);
+    ctx.logger.info(`Installing app for domain: ${saleorDomain}`);
 
-    const appIdResult = await fetchAppId({ apiUrl: saleorApiUrl, token: authToken });
+    const appIdResult = await fetchAppId({ apiUrl: saleorApiUrl, token: authToken }, ctx);
     if (appIdResult.isErr()) {
-      logger.error("Failed to fetch app ID from Saleor", {
+      ctx.logger.error("Failed to fetch app ID from Saleor", {
         saleorDomain,
         cause: appIdResult.error,
       });
@@ -55,12 +57,15 @@ export const createSaleorInstall =
 
     const appId = appIdResult.value;
 
-    const saveResult = await appConfigRepository.set({
-      saleorDomain,
-      config: { saleorDomain, authToken, saleorAppId: appId, saleorApiUrl },
-    });
+    const saveResult = await appConfigRepository.set(
+      {
+        saleorDomain,
+        config: { saleorDomain, authToken, saleorAppId: appId, saleorApiUrl },
+      },
+      ctx,
+    );
     if (saveResult.isErr()) {
-      logger.error("Failed to save app config", {
+      ctx.logger.error("Failed to save app config", {
         saleorDomain,
         cause: saveResult.error,
       });
@@ -73,12 +78,12 @@ export const createSaleorInstall =
       ]);
     }
 
-    const jwksResult = await jwksRepository.get({
-      issuer: saleorApiUrl,
-      forceRefresh: true,
-    });
+    const jwksResult = await jwksRepository.get(
+      { issuer: saleorApiUrl, forceRefresh: true },
+      ctx,
+    );
     if (jwksResult.isErr()) {
-      logger.error("Failed to prefetch JWKS keys", {
+      ctx.logger.error("Failed to prefetch JWKS keys", {
         saleorDomain,
         cause: jwksResult.error,
       });
@@ -91,7 +96,7 @@ export const createSaleorInstall =
       ]);
     }
 
-    logger.info(`App installed successfully for domain: ${saleorDomain}`, { appId });
+    ctx.logger.info(`App installed successfully for domain: ${saleorDomain}`, { appId });
 
     return ok(undefined);
   };

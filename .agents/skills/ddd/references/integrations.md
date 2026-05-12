@@ -79,20 +79,25 @@ Default: port-first. Promote to spec-scope or vendor-first when ≥3 related con
 ```typescript
 // src/di/container.ts (global) — primitives only
 .add({ logger: ... })
-.add((ctx) => ({ jwksRepository: () => createJwksRepository({ logger: ctx.logger }) }))
+.add({ jwksRepository: () => createJwksRepositoryFactory() })
 .add((ctx) => ({ joseAuthService: () => createJoseAuthService({ jwksRepository: ctx.jwksRepository }) }))
 .add({ appConfigRepository: () => createAppConfig() })
 ```
 
 ```typescript
-// src/apps/handler/api/rest/saleor/routes.tsx — inline composition
+// src/apps/handler/api/rest/saleor/routes.tsx — composition + ctx threading
 const saleorInstall = createSaleorInstall({
   appConfigRepository: container.items.appConfigRepository,
   fetchAppId: fetchSaleorAppId,
   jwksRepository: container.items.jwksRepository,
-  logger: container.items.logger,
 });
+
+// in handler:
+const ctx = { logger: context.get("logger") };
+await saleorInstall(input, ctx);
 ```
+
+Note: `logger` is NOT in `Deps`. It lives in `Context` and is threaded per call. See [context.md](context.md).
 
 Reasons:
 - Container stays small + meaningful (shared primitives)
@@ -136,35 +141,31 @@ Promote to service/port when ≥2 methods cluster naturally (`SaleorClient` with
 
 ## Factory-of-instance shape
 
-When a port needs request-scoped or tenant-scoped binding, use the factory shape:
+When a port needs internal caches or shared state across calls, use the factory shape:
 
 ```typescript
-export type JWKSRepositoryFactoryOpts = {
-  logger: Logger;
-};
-
 export type JWKSRepository = {
-  get(opts: {
-    issuer: string;
-    forceRefresh?: boolean;
-  }): AsyncResult<JsonWebKeySet, JwksErrorCode>;
-  set(opts: { issuer: string; jwks: JsonWebKeySet }): AsyncResult<void, JwksErrorCode>;
+  get(
+    opts: { issuer: string; forceRefresh?: boolean },
+    ctx: Context,
+  ): AsyncResult<JsonWebKeySet, JwksErrorCode>;
+  set(opts: { issuer: string; jwks: JsonWebKeySet }, ctx: Context): AsyncResult<void>;
 };
 
-export type JWKSRepositoryFactory = (opts: JWKSRepositoryFactoryOpts) => JWKSRepository;
+export type JWKSRepositoryFactory = () => JWKSRepository;
 ```
 
-- Factory takes config (logger, shared deps).
-- Returns instance with per-call params (issuer per request).
+- Factory takes **construction config** (cache TTL, region — things bound for instance lifetime). **Not `logger`** — that comes per call via `Context`.
+- Returns instance. Per-call params (issuer, tenantId) AND `ctx: Context` arrive at each method invocation.
 - DI stores the **instance**, not the factory:
 
 ```typescript
-.add((ctx) => ({
-  jwksRepository: () => createJwksRepositoryFactory({ logger: ctx.logger }),
-}))
+.add({
+  jwksRepository: () => createJwksRepositoryFactory(),
+})
 ```
 
-The factory function IS the adapter export. DI invokes it once. Consumers receive the instance.
+The factory function IS the adapter export. DI invokes it once. Consumers receive the instance and pass `ctx` per call.
 
 Use when:
 - Single global instance shared across requests
@@ -173,7 +174,7 @@ Use when:
 
 Don't use when:
 - Each consumer wants its own instance (return adapter directly)
-- No configuration to bind at factory level
+- No construction-time configuration at all
 
 ## Schemas co-located with their concern
 

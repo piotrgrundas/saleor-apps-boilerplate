@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, vi } from "vite-plus/test";
 
 import { it } from "@/lib/test/it";
+import { createTestContext } from "@/lib/test/mock";
 
 import { fetchSaleorAppId } from "./fetch-saleor-app-id";
 
@@ -33,7 +34,7 @@ describe("fetchSaleorAppId", () => {
     mockFetch(jsonResponse({ data: { app: { id: "app-123" } } }));
 
     // when
-    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(result.isOk()).toBe(true);
@@ -45,7 +46,7 @@ describe("fetchSaleorAppId", () => {
     mockFetch(jsonResponse({ data: { app: { id: "app-123" } } }));
 
     // when
-    await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -60,7 +61,7 @@ describe("fetchSaleorAppId", () => {
     mockFetchError(new Error("connection refused"));
 
     // when
-    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(result.isErr()).toBe(true);
@@ -73,7 +74,7 @@ describe("fetchSaleorAppId", () => {
     mockFetch(jsonResponse({}, 500));
 
     // when
-    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(result.isErr()).toBe(true);
@@ -86,7 +87,7 @@ describe("fetchSaleorAppId", () => {
     mockFetch(jsonResponse({ errors: [{ message: "Permission denied" }] }));
 
     // when
-    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(result.isErr()).toBe(true);
@@ -99,7 +100,7 @@ describe("fetchSaleorAppId", () => {
     mockFetch(jsonResponse({ data: { app: null } }));
 
     // when
-    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(result.isErr()).toBe(true);
@@ -111,7 +112,7 @@ describe("fetchSaleorAppId", () => {
     mockFetch(jsonResponse({}));
 
     // when
-    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN });
+    const result = await fetchSaleorAppId({ apiUrl: API_URL, token: TOKEN }, createTestContext());
 
     // then
     expect(result.isErr()).toBe(true);

@@ -1,11 +1,16 @@
 import { ok } from "neverthrow";
 import { vi } from "vite-plus/test";
 
+import type { Context } from "@/domain/context";
 import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
 import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
 import type { JWKSRepository } from "@/domain/ports/jwks-repository";
 import type { Logger } from "@/domain/ports/logger";
 import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
+
+export const createTestContext = (): Context => ({
+  logger: createMockLogger(),
+});
 
 /**
  * Proxy mock that auto-creates a `vi.fn()` for any accessed property.

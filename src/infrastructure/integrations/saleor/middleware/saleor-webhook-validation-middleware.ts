@@ -28,12 +28,16 @@ export function saleorWebhookValidationMiddleware({ joseAuthService }: Opts): Mi
     };
 
     const payload = await context.req.text();
+    const ctx = { logger: context.get("logger") };
 
-    const result = await joseAuthService.verifyJWSDetached({
-      jws: headers["saleor-signature"],
-      payload,
-      issuer: headers["saleor-api-url"],
-    });
+    const result = await joseAuthService.verifyJWSDetached(
+      {
+        jws: headers["saleor-signature"],
+        payload,
+        issuer: headers["saleor-api-url"],
+      },
+      ctx,
+    );
 
     if (result.isErr()) {
       throw new UnauthorizedError(result.error[0]?.message ?? "Invalid webhook signature");

@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import { err, ok } from "neverthrow";
 
+import type { Context } from "@/domain/context";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { AppConfigErrorCode } from "@/domain/errors/scopes/app-config";
 import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
@@ -31,10 +32,9 @@ export const createAwsSecretManagerAppConfigRepository = (
   });
   const secretPath = options.secretPath;
 
-  const getConfigMap = async (): AsyncResult<
-    Record<string, SaleorAppConfig>,
-    AppConfigErrorCode
-  > => {
+  const getConfigMap = async (
+    ctx: Context,
+  ): AsyncResult<Record<string, SaleorAppConfig>, AppConfigErrorCode> => {
     try {
       const command = new GetSecretValueCommand({ SecretId: secretPath });
       const response = await client.send(command);
@@ -48,10 +48,13 @@ export const createAwsSecretManagerAppConfigRepository = (
 
       return ok(result.success ? result.data : {});
     } catch (error) {
-      // Secret doesn't exist yet — treat as empty map.
       if (error instanceof ResourceNotFoundException) {
         return ok({});
       }
+      ctx.logger.error("Failed to read app config from AWS Secrets Manager", {
+        secretPath,
+        cause: error,
+      });
       return err([
         {
           code: "APP_CONFIG_READ_ERROR",
@@ -64,6 +67,7 @@ export const createAwsSecretManagerAppConfigRepository = (
 
   const saveConfigMap = async (
     configMap: Record<string, SaleorAppConfig>,
+    ctx: Context,
   ): AsyncResult<void, AppConfigErrorCode> => {
     const secretString = JSON.stringify(configMap);
 
@@ -73,14 +77,18 @@ export const createAwsSecretManagerAppConfigRepository = (
       );
       return ok(undefined);
     } catch (error) {
-      // Secret doesn't exist yet — create it.
       if (error instanceof ResourceNotFoundException) {
         try {
+          ctx.logger.info("Secret not found; creating", { secretPath });
           await client.send(
             new CreateSecretCommand({ Name: secretPath, SecretString: secretString }),
           );
           return ok(undefined);
         } catch (createError) {
+          ctx.logger.error("Failed to create app config secret", {
+            secretPath,
+            cause: createError,
+          });
           return err([
             {
               code: "APP_CONFIG_WRITE_ERROR",
@@ -90,6 +98,10 @@ export const createAwsSecretManagerAppConfigRepository = (
           ]);
         }
       }
+      ctx.logger.error("Failed to write app config to AWS Secrets Manager", {
+        secretPath,
+        cause: error,
+      });
       return err([
         {
           code: "APP_CONFIG_WRITE_ERROR",
@@ -101,28 +113,28 @@ export const createAwsSecretManagerAppConfigRepository = (
   };
 
   return {
-    async get(saleorDomain) {
-      const configMapResult = await getConfigMap();
+    async get(saleorDomain, ctx) {
+      const configMapResult = await getConfigMap(ctx);
 
       if (configMapResult.isErr()) return err(configMapResult.error);
 
       return ok(configMapResult.value[saleorDomain] ?? null);
     },
-    async set({ saleorDomain, config }) {
-      const configMapResult = await getConfigMap();
+    async set({ saleorDomain, config }, ctx) {
+      const configMapResult = await getConfigMap(ctx);
 
       if (configMapResult.isErr()) return err(configMapResult.error);
 
       configMapResult.value[saleorDomain] = config;
-      return saveConfigMap(configMapResult.value);
+      return saveConfigMap(configMapResult.value, ctx);
     },
-    async delete(saleorDomain) {
-      const configMapResult = await getConfigMap();
+    async delete(saleorDomain, ctx) {
+      const configMapResult = await getConfigMap(ctx);
 
       if (configMapResult.isErr()) return err(configMapResult.error);
 
       delete configMapResult.value[saleorDomain];
-      return saveConfigMap(configMapResult.value);
+      return saveConfigMap(configMapResult.value, ctx);
     },
   };
 };

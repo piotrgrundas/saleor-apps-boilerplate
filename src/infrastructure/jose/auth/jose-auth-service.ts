@@ -10,8 +10,8 @@ type Deps = {
 };
 
 export const createJoseAuthService = ({ jwksRepository }: Deps): JoseAuthService => ({
-  async verifyJWT({ token, issuer, forceRefresh = false }) {
-    const keysResult = await jwksRepository.get({ issuer, forceRefresh });
+  async verifyJWT({ token, issuer, forceRefresh = false }, ctx) {
+    const keysResult = await jwksRepository.get({ issuer, forceRefresh }, ctx);
     if (keysResult.isErr()) {
       return err([
         {
@@ -37,8 +37,8 @@ export const createJoseAuthService = ({ jwksRepository }: Deps): JoseAuthService
     }
   },
 
-  async verifyJWS({ jws, issuer, forceRefresh = false }) {
-    const keysResult = await jwksRepository.get({ issuer, forceRefresh });
+  async verifyJWS({ jws, issuer, forceRefresh = false }, ctx) {
+    const keysResult = await jwksRepository.get({ issuer, forceRefresh }, ctx);
     if (keysResult.isErr()) return err(keysResult.error);
 
     try {
@@ -52,7 +52,7 @@ export const createJoseAuthService = ({ jwksRepository }: Deps): JoseAuthService
     }
   },
 
-  async verifyJWSDetached({ jws, payload, issuer, forceRefresh = false }) {
+  async verifyJWSDetached({ jws, payload, issuer, forceRefresh = false }, ctx) {
     const [protectedHeader, signature] = jws.split("..");
 
     if (!protectedHeader || !signature) {
@@ -64,7 +64,7 @@ export const createJoseAuthService = ({ jwksRepository }: Deps): JoseAuthService
       ]);
     }
 
-    const keysResult = await jwksRepository.get({ issuer, forceRefresh });
+    const keysResult = await jwksRepository.get({ issuer, forceRefresh }, ctx);
     if (keysResult.isErr()) return err(keysResult.error);
 
     try {

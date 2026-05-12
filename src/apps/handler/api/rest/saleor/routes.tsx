@@ -17,7 +17,6 @@ const saleorInstall = createSaleorInstall({
   appConfigRepository: container.items.appConfigRepository,
   fetchAppId: fetchSaleorAppId,
   jwksRepository: container.items.jwksRepository,
-  logger: container.items.logger,
 });
 
 const routes = new Hono();
@@ -54,10 +53,6 @@ routes.get("/manifest", (context) => {
     ],
   };
 
-  const logger = context.get("logger");
-  logger.info("dupa");
-  logger.error("dupa2");
-
   return context.json(manifest);
 });
 
@@ -73,14 +68,17 @@ routes.post(
     const { auth_token: authToken } = context.req.valid("json");
     const { "saleor-domain": saleorDomain, "saleor-api-url": saleorApiUrl } =
       context.req.valid("header");
-    const logger = context.get("logger");
+    const ctx = { logger: context.get("logger") };
 
-    const result = await saleorInstall({
-      saleorDomain,
-      saleorApiUrl,
-      authToken,
-      allowedDomains: APP_CONFIG.ALLOWED_DOMAINS,
-    });
+    const result = await saleorInstall(
+      {
+        saleorDomain,
+        saleorApiUrl,
+        authToken,
+        allowedDomains: APP_CONFIG.ALLOWED_DOMAINS,
+      },
+      ctx,
+    );
 
     if (result.isErr()) {
       if (result.error[0]?.code === "SALEOR_INSTALL_DOMAIN_NOT_ALLOWED_ERROR") {
