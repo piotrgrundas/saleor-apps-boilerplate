@@ -5,4 +5,5 @@ export type Logger = {
   warn(message: string, meta?: Record<string, unknown>): void;
   error(message: string, meta?: Record<string, unknown>): void;
   withTag(tag: string): Logger;
+  withContext(context: Record<string, unknown>): Logger;
 };

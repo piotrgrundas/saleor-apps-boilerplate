@@ -1,31 +1,19 @@
 services:
-  app:
-    build:
-      context: .
-      target: development
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./src:/app/src
-      - ./public:/app/public
-      - ./constants.ts:/app/constants.ts
-      - ./scripts:/app/scripts
-    env_file:
-      - .env
-    environment:
-      - AWS_ENDPOINT_URL=http://localstack:4566
-    depends_on:
-      localstack:
-        condition: service_healthy
-
   localstack:
     image: localstack/localstack:4.5
     ports:
       - "4566:4566"
     environment:
       - SERVICES=secretsmanager
-      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-dummy}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-dummy}
+      - AWS_REGION=${AWS_REGION:-ap-southeast-1}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-http://host.docker.internal:4566}
+      - DEBUG=${DEBUG:-0}
+      - SECRET_MANAGER_APP_CONFIG_PATH=${SECRET_MANAGER_APP_CONFIG_PATH?:SECRET_MANAGER_APP_CONFIG_PATH env is required}
     volumes:
+      - "./localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
       - ./etc/commands/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]

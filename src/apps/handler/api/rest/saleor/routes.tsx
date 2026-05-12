@@ -27,7 +27,7 @@ const routes = new Hono();
  * Returns the Saleor App manifest.
  */
 routes.get("/manifest", (context) => {
-  const origin = context.get("origin");
+  const baseUrl = context.get("baseUrl");
 
   const manifest: SaleorAppManifest = {
     id: `${pkg.name.toLowerCase().replace(/\s+/g, "-")}.app`,
@@ -35,12 +35,12 @@ routes.get("/manifest", (context) => {
     name: pkg.name,
     about: pkg.description,
     permissions: ["MANAGE_PRODUCTS"],
-    appUrl: `${origin}/client/app`,
-    tokenTargetUrl: `${origin}/api/saleor/register`,
+    appUrl: `${baseUrl}/client/app`,
+    tokenTargetUrl: `${baseUrl}/api/saleor/register`,
     author: pkg.author,
     brand: {
       logo: {
-        default: `${origin}/logo.png`,
+        default: `${baseUrl}/logo.png`,
       },
     },
     webhooks: [
@@ -48,11 +48,15 @@ routes.get("/manifest", (context) => {
         name: "Product Updated",
         asyncEvents: ["PRODUCT_UPDATED"],
         query: ProductUpdatedDocument.toString(),
-        targetUrl: `${origin}/api/saleor/webhooks/product-updated`,
+        targetUrl: `${baseUrl}/api/saleor/webhooks/product-updated`,
         isActive: true,
       },
     ],
   };
+
+  const logger = context.get("logger");
+  logger.info("dupa");
+  logger.error("dupa2");
 
   return context.json(manifest);
 });
@@ -67,9 +71,9 @@ routes.post(
   zodValidatorMiddleware("json", saleorRegisterPayloadSchema),
   async (context) => {
     const { auth_token: authToken } = context.req.valid("json");
-
     const { "saleor-domain": saleorDomain, "saleor-api-url": saleorApiUrl } =
       context.req.valid("header");
+    const logger = context.get("logger");
 
     const result = await saleorInstall({
       saleorDomain,

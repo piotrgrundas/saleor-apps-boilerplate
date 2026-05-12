@@ -62,19 +62,39 @@ const formatPretty = (msg: string, meta?: Record<string, unknown>) =>
 const formatRaw = (msg: string, meta?: Record<string, unknown>) =>
   meta ? [msg, redactSensitive(meta)] : [msg];
 
-const toLogger = (tslog: TsLog<ILogObj>): Logger => {
+const mergeMeta = (
+  context: Record<string, unknown>,
+  meta?: Record<string, unknown>,
+): Record<string, unknown> | undefined => {
+  const hasContext = Object.keys(context).length > 0;
+  if (!hasContext && !meta) return undefined;
+  if (!hasContext) return meta;
+  if (!meta) return context;
+  return { ...context, ...meta };
+};
+
+const toLogger = (
+  tslog: TsLog<ILogObj>,
+  context: Record<string, unknown> = {},
+): Logger => {
   const format = tslog.settings.type === "pretty" ? formatPretty : formatRaw;
+  const emit =
+    (level: "trace" | "debug" | "info" | "warn" | "error") =>
+    (msg: string, meta?: Record<string, unknown>) =>
+      tslog[level](...format(msg, mergeMeta(context, meta)));
+
   return {
-    trace: (msg, meta) => tslog.trace(...format(msg, meta)),
-    debug: (msg, meta) => tslog.debug(...format(msg, meta)),
-    info: (msg, meta) => tslog.info(...format(msg, meta)),
-    warn: (msg, meta) => tslog.warn(...format(msg, meta)),
-    error: (msg, meta) => tslog.error(...format(msg, meta)),
+    trace: emit("trace"),
+    debug: emit("debug"),
+    info: emit("info"),
+    warn: emit("warn"),
+    error: emit("error"),
     withTag: (tag) => {
       const parent = tslog.settings.name;
       const name = parent ? `${parent}:${tag}` : tag;
-      return toLogger(tslog.getSubLogger({ name }));
+      return toLogger(tslog.getSubLogger({ name }), context);
     },
+    withContext: (extra) => toLogger(tslog, { ...context, ...extra }),
   };
 };
 

@@ -35,7 +35,9 @@ src/
 │       ├── <slice>-shared.ts            # shared helpers — writeChunk etc. (NO suffix)
 │       └── configs.ts                   # per-instance config objects (NO suffix)
 ├── infrastructure/                      # adapters (factory functions)
-│   └── <port>/<vendor>/<vendor>-<port>.ts   # e.g. storage/s3/s3-storage.ts, jwks/jose/jose-jwks-repository.ts
+│   ├── <port>/<vendor>/<vendor>-<port>.ts   # PORT-FIRST — e.g. app-config/aws/aws-secret-manager-app-config-repository.ts
+│   ├── <spec>/<concept>/<file>.ts           # SPEC-SCOPE — e.g. jose/jwks/, jose/jwt/, jose/auth/ (RFC families)
+│   └── integrations/<vendor>/<concern>/     # VENDOR-FIRST — e.g. integrations/saleor/{install,webhook,client,graphql}/
 ├── di/container.ts                      # GLOBAL — primitives only
 ├── apps/
 │   └── <app>/
@@ -185,7 +187,25 @@ export const createS3Storage = (bucket: string): Storage => {
 - Wrap external throwables with plain `try/catch` and translate to `err([...])`. Never re-throw.
 - One implementation per vendor folder. Multiple impls = multiple vendor folders (`s3/s3-storage.ts`, `file/file-storage.ts`).
 - Port-level shared utilities (types, helpers consumed by multiple vendors) live at the port folder root — never inside a vendor folder.
-- **Vendor SDK umbrella exception**: a vendor's non-port helpers (webhook schemas, middleware, manifests, transaction utils) that aren't a port adapter live at `infrastructure/<vendor>/` (e.g. `infrastructure/saleor/{webhook,middleware,transaction,header,types.ts}`). The port adapter itself still lives under its port folder (`infrastructure/store-service/saleor/saleor-store-service.ts`) and cross-references the umbrella by `@/` alias. Use the umbrella only for genuine SDK-level helpers, not as a back-door around the port/vendor layout.
+- **Three folder patterns coexist** — port-first (`<port>/<vendor>/`), spec-scope (`<standard>/<concept>/`), vendor-first (`integrations/<vendor>/`). Full criteria + integration playbook: **[references/integrations.md](references/integrations.md)**.
+- **Vendor-first lives under `integrations/<vendor>/`** for proprietary protocols (Saleor install handshake, webhook verification, client calls, GraphQL ops, schemas). All vendor concerns cluster — easier "find everything Saleor" navigation.
+- **Spec-scope** for IETF/RFC families (e.g. `infrastructure/jose/{jwks,jwt,auth}/`). Folder name = the standard, not the lib. Drop lib-prefix on filenames since folder context says it.
+
+## When NOT to create a port / use-case
+
+Skill bias toward ports + use-cases + the `UseCase` suffix is for **domain orchestration**. Boilerplate / integration-only services often need less.
+
+Rules:
+
+- **N=1 caller + trivial delegation** → collapse into the consumer. Saleor webhook verify is a single delegation (verify signature + remap error) → inline into Hono mw, no use-case file, no scope codes for a one-step verify.
+- **N=1 caller + multi-step orchestration with multiple distinct error codes** → keep as a **procedure file** under the relevant folder (e.g. `integrations/saleor/install/saleor-install.ts`). NOT registered in DI. Compose inline in the calling route. Returns `AsyncResult<T, ScopeErrorCode>` like a use-case, but isn't promoted to `application/` since there's no domain orchestration.
+- **N≥2 callers, or domain logic, or genuine orchestration over domain entities** → full use-case in `application/` with DI key + `UseCase` suffix.
+- **One-method "Service"** → ❌ function in tuxedo. Export as plain function (`fetchSaleorAppId`) with a function-typed alias (`FetchSaleorAppId`). Inject as function dep. Tests pass plain async fns.
+- **`application/` may be empty** in pure-protocol boilerplates. Don't manufacture use-cases for protocol handlers — those live in `infrastructure/integrations/<vendor>/`.
+
+Decision flow: domain logic? → `application/` use-case. Pure protocol? → `infrastructure/integrations/<vendor>/`. One step? → function. Many steps + many errors? → procedure file.
+
+Integration composition (DI vs call-site, factory-of-instance, schemas, naming): **[references/integrations.md](references/integrations.md)**.
 
 ## Domain entities
 
@@ -348,6 +368,19 @@ Full handler body, class definitions: **[references/errors.md](references/errors
 - ❌ Flat adapter file `infrastructure/<port>/<vendor>-<port>.ts` without vendor subfolder — must be `infrastructure/<port>/<vendor>/<vendor>-<port>.ts`. Vendor folder isolates vendor-specific helpers (SDKs, generated code, schemas).
 - ❌ Vendor-specific helpers at the port folder root (`infrastructure/storage/s3-helpers.ts`) — move into the vendor folder. Only port-level shared utilities (types, redaction) live at the root.
 - ❌ Use-case as class with `.execute()` — must be factory function returning a curried handler.
+- ❌ Port with one method (`type StoreService = { getAppId(...) }`) — collapse to plain function + function-typed alias. Service wrapping single op = function in tuxedo. (See [integrations.md](references/integrations.md).)
+- ❌ Use-case file for N=1 trivial delegation (single-step wrap of one port call) — collapse into consumer or use a plain procedure file under `integrations/<vendor>/`.
+- ❌ Registering `integrations/<vendor>/` code in DI — vendor procedures composed at call site. Global container = generic primitives only.
+- ❌ Per-vendor DI keys (`saleorInstall`, `shopifyInstall`) bloating global container — pull vendor composition out, expose only the cross-vendor primitives the integration consumes.
+- ❌ "AppConfig" type in `domain/` with vendor-flavored fields (`saleorDomain`, `saleorApiUrl`) — move schema to `infrastructure/integrations/<vendor>/app-config/schema.ts`. Domain stays vendor-neutral.
+- ❌ Schema for vendor protocol body in `domain/` — co-locate with the integration concern (`integrations/saleor/install/schema.ts`, `integrations/saleor/webhook/schema.ts`).
+- ❌ Boolean variant flag (`verifyJWS({ ..., detached: boolean })`) — split into two methods (`verifyJWS` + `verifyJWSDetached`). Boolean = code smell.
+- ❌ Variant prefix (`verifyDetachedJWS`) — use suffix (`verifyJWSDetached`) so variants group with base name in autocomplete/sort.
+- ❌ Generic error code prefix that hides emitter (`STORE_REQUEST_ERROR` when only Saleor emits it) — prefix with emitter name (`SALEOR_REQUEST_ERROR`). Scope file mirrors emitter (`scopes/saleor.ts`).
+- ❌ `__var` / `_var` prefix inside factory functions — closures already enforce privacy. Pure noise.
+- ❌ Helper for single-element `err([...])` — keeps array shape visible, avoid hiding the contract.
+- ❌ `config/index.ts` folder with only one file — flatten to `config.ts`. Folder earns its keep with multiple files.
+- ❌ Mixing env config (`config.ts`) and tenant app-config schema (`app-config.ts`) in same file — env vars vs persisted tenant data are different concepts.
 - ❌ Inheritance in `application/` (`class ChannelScopedCrawl extends CatalogueCrawl`) — compose via shared helper modules.
 - ❌ Concrete adapter import outside `src/di/**`, `src/apps/*/di/**` — application/use-cases depend on the port _type_ only.
 - ❌ Use-case factory calling another use-case factory inside — extract shared logic to a helper module both call.
@@ -377,4 +410,5 @@ Full handler body, class definitions: **[references/errors.md](references/errors
 - [di.md](references/di.md) — `iti` layering, factory wiring, boundary access.
 - [examples.md](references/examples.md) — end-to-end worked example (port + adapter + use-case + DI + route).
 - [neverthrow-api.md](references/neverthrow-api.md) — primitives + house style.
+- [integrations.md](references/integrations.md) — three folder patterns, integrations vs DI, plain functions vs services, factory-of-instance shape, schemas co-located.
 - External: [iti](https://itijs.org/), [neverthrow](https://github.com/supermacro/neverthrow#api-documentation).

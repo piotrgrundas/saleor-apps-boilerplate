@@ -4,16 +4,16 @@ import { createTestApp } from "@/lib/test/app";
 import { it } from "@/lib/test/it";
 import { createTestRequest } from "@/lib/test/request";
 
-import { requestOriginMiddleware } from "./request-origin-middleware";
+import { createRequestOriginMiddleware } from "./request-origin-middleware";
 
-function createApp() {
+function createApp(basePath = "") {
   const app = createTestApp();
-  app.use("*", requestOriginMiddleware);
+  app.use("*", createRequestOriginMiddleware({ basePath }));
   app.get("*", (context) => context.text(context.get("origin")));
   return app;
 }
 
-describe("requestOriginMiddleware", () => {
+describe("createRequestOriginMiddleware", () => {
   it.each([
     {
       desc: "both headers present",

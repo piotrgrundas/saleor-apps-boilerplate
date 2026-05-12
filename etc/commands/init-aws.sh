@@ -1,16 +1,14 @@
-#!/usr/bin/env bash
-# Creates the initial AWS Secrets Manager secret in Localstack
+#!/bin/bash
 set -euo pipefail
 
-SECRET_NAME="${SECRET_MANAGER_APP_CONFIG_PATH:-saleor-app-config}"
-ENDPOINT="http://localhost:4566"
+# https://docs.localstack.cloud/references/init-hooks/
 
-echo "Creating secret '${SECRET_NAME}' in Localstack..."
+SEPARATOR='----------------------------------------------------------------------------'
+ENDPOINT_URL="http://localhost:4566"
 
-awslocal secretsmanager create-secret \
-  --name "${SECRET_NAME}" \
-  --secret-string '{}' \
-  --region "${AWS_REGION:-us-east-1}" \
-  2>/dev/null || echo "Secret already exists, skipping."
+echo -e "\n"
 
-echo "Localstack secrets initialized."
+echo $SEPARATOR
+echo -e "Running AWS create secret command for ${SECRET_MANAGER_APP_CONFIG_PATH}.\n"
+aws secretsmanager create-secret --region ${AWS_REGION} --endpoint-url=${ENDPOINT_URL} --name ${SECRET_MANAGER_APP_CONFIG_PATH} --secret-string '{}'
+echo -e "\nCreated ${SECRET_MANAGER_APP_CONFIG_PATH} in for ${AWS_REGION}"

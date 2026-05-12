@@ -1,6 +1,8 @@
 import {
+  CreateSecretCommand,
   GetSecretValueCommand,
   PutSecretValueCommand,
+  ResourceNotFoundException,
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import { err, ok } from "neverthrow";
@@ -46,10 +48,14 @@ export const createAwsSecretManagerAppConfigRepository = (
 
       return ok(result.success ? result.data : {});
     } catch (error) {
+      // Secret doesn't exist yet — treat as empty map.
+      if (error instanceof ResourceNotFoundException) {
+        return ok({});
+      }
       return err([
         {
           code: "APP_CONFIG_READ_ERROR",
-          message: `Failed to read config from AWS Secrets Manager: ${getErrorMessage(error)}`,
+          message: `Failed to read config - ${secretPath} - from AWS Secrets Manager: ${getErrorMessage(error)}`,
           details: { cause: error },
         },
       ]);
@@ -59,15 +65,31 @@ export const createAwsSecretManagerAppConfigRepository = (
   const saveConfigMap = async (
     configMap: Record<string, SaleorAppConfig>,
   ): AsyncResult<void, AppConfigErrorCode> => {
-    try {
-      const command = new PutSecretValueCommand({
-        SecretId: secretPath,
-        SecretString: JSON.stringify(configMap),
-      });
+    const secretString = JSON.stringify(configMap);
 
-      await client.send(command);
+    try {
+      await client.send(
+        new PutSecretValueCommand({ SecretId: secretPath, SecretString: secretString }),
+      );
       return ok(undefined);
     } catch (error) {
+      // Secret doesn't exist yet — create it.
+      if (error instanceof ResourceNotFoundException) {
+        try {
+          await client.send(
+            new CreateSecretCommand({ Name: secretPath, SecretString: secretString }),
+          );
+          return ok(undefined);
+        } catch (createError) {
+          return err([
+            {
+              code: "APP_CONFIG_WRITE_ERROR",
+              message: `Failed to create config in AWS Secrets Manager: ${getErrorMessage(createError)}`,
+              details: { cause: createError },
+            },
+          ]);
+        }
+      }
       return err([
         {
           code: "APP_CONFIG_WRITE_ERROR",

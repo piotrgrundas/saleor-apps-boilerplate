@@ -32,6 +32,7 @@ export function createMockLogger(): Logger {
     warn: () => {},
     error: () => {},
     withTag: () => createMockLogger(),
+    withContext: () => createMockLogger(),
   };
 }
 

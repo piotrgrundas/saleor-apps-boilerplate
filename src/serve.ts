@@ -24,6 +24,10 @@ logger.info(
 );
 
 for (const name of appNames) {
+  // Each app is mounted at /<name>; align BASE_PATH so app-internal
+  // routing, asset URLs, and client `window.env.BASE_PATH` match.
+  process.env.BASE_PATH = `/${name}`;
+
   const entry = join(appsDir, name, "entry-server.ts");
   const mod = await import(pathToFileURL(entry).href);
 
@@ -32,7 +36,7 @@ for (const name of appNames) {
    */
   if (!mod.default) continue;
 
-  app.route(`/${name}`, mod.default);
+  app.route("/", mod.default);
 }
 
 const port = Number(process.env.PORT ?? 8000);
