@@ -47,9 +47,9 @@ routes.get("/manifest", (context) => {
   };
 
   const logger = context.get("logger");
-  logger.info("Info log test hehe");
-  logger.warn("Warn log test hehe");
-  logger.error("Error log test hehe");
+  // logger.info("Info log test hehe");
+  // logger.warn("Warn log test hehe");
+  // logger.error("Error log test hehe");
 
   // throw new Error("OH shit I've errorded!", { cause: "hehe" });
 
