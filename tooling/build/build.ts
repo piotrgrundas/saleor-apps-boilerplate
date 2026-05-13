@@ -107,16 +107,26 @@ if (serverApps.length === 0) {
 }
 
 console.log(`Building ${serverApps.length} server app(s)...`);
-for (const app of serverApps) await buildServer(app);
+
+for (const app of serverApps) {
+  await buildServer(app);
+}
 
 const clientApps = discoverEntryPoints("entry-client.tsx");
+
 if (clientApps.length > 0) {
   console.log(`Building ${clientApps.length} client app(s)...`);
-  for (const app of clientApps) await buildClient(app, { minify: true, nodeEnv: "production" });
+
+  for (const app of clientApps) {
+    await buildClient(app, { minify: true, nodeEnv: "production" });
+  }
 }
 
 console.log("Installing external dependencies...");
-for (const app of serverApps) installExternals(app);
+
+for (const app of serverApps) {
+  installExternals(app);
+}
 
 copyPublicAssets();
 generateRootPackageJson();

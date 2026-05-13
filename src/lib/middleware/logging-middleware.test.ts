@@ -37,8 +37,8 @@ describe("createLoggingMiddleware", () => {
 
     // then
     expect(debugCalls).toHaveLength(2);
-    expect(debugCalls[0].message).toBe("GET ▶ /test");
-    expect(debugCalls[1].message).toMatch(/^GET ◀ 200 \/test \(\d+ms\)$/);
+    expect(debugCalls[0].message).toBe("GET ⇒ /test");
+    expect(debugCalls[1].message).toMatch(/^GET ⇐ 200 \(\d+ms\) \/test$/);
   });
 
   it("sets logger in context", async () => {

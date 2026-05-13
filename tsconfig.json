@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node"],
+    "types": ["node", "react", "react-dom"],
     "paths": {
       "@/*": ["./src/*"],
       "@/constants": ["./constants.ts"]

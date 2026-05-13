@@ -39,17 +39,13 @@ export function discoverEntryPoints(filename: string): AppEntry[] {
   return entries;
 }
 
-export async function buildClient(
-  app: AppEntry,
-  options: { minify: boolean; nodeEnv: string },
-) {
+export async function buildClient(app: AppEntry, options: { minify: boolean; nodeEnv: string }) {
   const outdir = path.join(DIST_DIR, app.name, "assets");
   fs.mkdirSync(outdir, { recursive: true });
 
   await viteBuild({
     configFile: false,
     root: process.cwd(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- plugin types mismatch with Vite+ remapped core
     plugins: [react() as any],
     resolve: {
       alias: {

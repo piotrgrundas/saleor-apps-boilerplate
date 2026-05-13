@@ -30,15 +30,16 @@ export const MagicMock = <T extends object>(): T => {
 };
 
 export function createMockLogger(): Logger {
-  return {
+  const logger: Logger = {
     trace: () => {},
     debug: () => {},
     info: () => {},
     warn: () => {},
     error: () => {},
-    withTag: () => createMockLogger(),
-    withContext: () => createMockLogger(),
+    withTag: () => logger,
+    withContext: () => logger,
   };
+  return logger;
 }
 
 export function createMockAppConfigRepository(

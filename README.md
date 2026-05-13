@@ -33,6 +33,7 @@ Architecture docs: see `.agents/skills/ddd/`.
 ## Setup
 
 ```bash
+vp upgrade           # keep global vp in sync with project version (fixes cache db mismatch)
 vp install
 cp .env.example .env
 
@@ -41,10 +42,10 @@ docker compose up -d localstack
 vp run dev
 ```
 
-Locally, apps are auto-discovered. BASE_PATH is applied as app-name dir (src/apps/*) and app is available under:
+Locally, apps are auto-discovered. BASE_PATH is applied as app-name dir (src/apps/\*) and app is available under:
 
-- http://localhost:8000/handler/(*<APP_ROUTES>)
-- http://localhost:8000/dashboard/(*<APP_ROUTES>)
+- http://localhost:8000/handler/(\*<APP_ROUTES>)
+- http://localhost:8000/dashboard/(\*<APP_ROUTES>)
 
 ## Commands
 
