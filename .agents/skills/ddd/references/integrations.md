@@ -13,6 +13,7 @@ infrastructure/
 ```
 
 Use when:
+
 - Port is a genuine abstraction (storage, logging, config persistence)
 - Multiple vendors plausible (or one today + tests + maybe lib swap)
 - Capability is vendor-neutral
@@ -29,6 +30,7 @@ infrastructure/jose/
 ```
 
 Use when:
+
 - Code implements concepts from a published spec family
 - Multiple related concepts cluster naturally
 - Folder name = the spec (`jose`, `oauth`, `oidc`), not the lib
@@ -58,17 +60,18 @@ infrastructure/integrations/saleor/
 ```
 
 Use when:
+
 - Vendor has proprietary protocol/handshake
 - Multiple related concerns cluster (install + webhook + client + schemas)
 - "Find all Saleor stuff" is a real query
 
 ## Choosing between patterns
 
-| Question | Pattern |
-|---|---|
-| Does the port abstract over multiple libs/impls today? | Port-first |
-| Is this code from a public spec family (RFC, IETF)? | Spec-scope |
-| Is this proprietary protocol of an external system? | Vendor-first |
+| Question                                               | Pattern      |
+| ------------------------------------------------------ | ------------ |
+| Does the port abstract over multiple libs/impls today? | Port-first   |
+| Is this code from a public spec family (RFC, IETF)?    | Spec-scope   |
+| Is this proprietary protocol of an external system?    | Vendor-first |
 
 Default: port-first. Promote to spec-scope or vendor-first when ≥3 related concerns cluster.
 
@@ -100,6 +103,7 @@ await saleorInstall(input, ctx);
 Note: `logger` is NOT in `Deps`. It lives in `Context` and is threaded per call. See [context.md](context.md).
 
 Reasons:
+
 - Container stays small + meaningful (shared primitives)
 - Future vendors (Shopify, Stripe) don't bloat DI
 - Composition at use site is explicit + reads in context
@@ -141,9 +145,14 @@ Promote to service/port when ≥2 methods cluster naturally (`SaleorClient` with
 
 ## Factory-of-instance shape
 
-When a port needs internal caches or shared state across calls, use the factory shape:
+When a port needs internal caches or shared state across calls, the adapter is a **factory function returning the port instance directly**. No separate `XxxFactory` type — the function's signature documents it.
 
 ```typescript
+// domain/ports/jwks-repository.ts
+export type JWKSRepositoryOptions = {
+  cacheTtlSeconds?: number;
+};
+
 export type JWKSRepository = {
   get(
     opts: { issuer: string; forceRefresh?: boolean },
@@ -151,28 +160,39 @@ export type JWKSRepository = {
   ): AsyncResult<JsonWebKeySet, JwksErrorCode>;
   set(opts: { issuer: string; jwks: JsonWebKeySet }, ctx: Context): AsyncResult<void>;
 };
-
-export type JWKSRepositoryFactory = () => JWKSRepository;
 ```
 
-- Factory takes **construction config** (cache TTL, region — things bound for instance lifetime). **Not `logger`** — that comes per call via `Context`.
-- Returns instance. Per-call params (issuer, tenantId) AND `ctx: Context` arrive at each method invocation.
-- DI stores the **instance**, not the factory:
+```typescript
+// infrastructure/jose/jwks/memory/jwks-memory-repository-factory.ts
+export const createJwksRepositoryFactory = (
+  opts?: JWKSRepositoryOptions,
+): JWKSRepository => {
+  const cache = new NodeCache(...);
+  return { get(...) { ... }, set(...) { ... } };
+};
+```
+
+- Factory takes **construction options** (cache TTL — things bound for instance lifetime). **Not `logger`** — that comes per call via `Context`.
+- Options type lives in `domain/ports/<port>.ts` so multiple adapters share it.
+- Returns the port instance. Per-call params (issuer, tenantId) AND `ctx: Context` arrive at each method invocation.
+- DI stores the **instance**:
 
 ```typescript
 .add({
-  jwksRepository: () => createJwksRepositoryFactory(),
+  jwksRepository: () => createJwksRepositoryFactory({ cacheTtlSeconds: 86400 }),
 })
 ```
 
 The factory function IS the adapter export. DI invokes it once. Consumers receive the instance and pass `ctx` per call.
 
 Use when:
+
 - Single global instance shared across requests
 - Per-call params (issuer, tenantId) vary
 - Internal cache keyed by per-call value
 
 Don't use when:
+
 - Each consumer wants its own instance (return adapter directly)
 - No construction-time configuration at all
 
@@ -214,13 +234,13 @@ Prefix names who emits, not abstract layer.
 
 ```typescript
 // ✅
-"SALEOR_REQUEST_ERROR"     // Saleor API request failed
-"SALEOR_APP_NOT_FOUND_ERROR"
-"JWKS_FETCH_ERROR"          // JWKS endpoint fetch failed
-"SALEOR_INSTALL_DOMAIN_NOT_ALLOWED_ERROR"
+"SALEOR_REQUEST_ERROR"; // Saleor API request failed
+"SALEOR_APP_NOT_FOUND_ERROR";
+"JWKS_FETCH_ERROR"; // JWKS endpoint fetch failed
+"SALEOR_INSTALL_DOMAIN_NOT_ALLOWED_ERROR";
 
 // ❌ Lies about ownership
-"STORE_REQUEST_ERROR"       // What store? Generic name hides Saleor specificity
+"STORE_REQUEST_ERROR"; // What store? Generic name hides Saleor specificity
 ```
 
 Rename codes when their emitter renames. Error scope files mirror the emitter name (`scopes/saleor.ts`, `scopes/jwks.ts`, `scopes/saleor-install.ts`).

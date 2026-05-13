@@ -37,8 +37,7 @@ const TEST_CONFIG: SaleorAppConfig = {
 };
 
 const OPTIONS = {
-  region: "us-east-1",
-  secretPath: "test/secret",
+  configPath: "test/secret",
 };
 
 beforeEach(() => {

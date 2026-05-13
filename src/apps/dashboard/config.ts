@@ -1,17 +1,17 @@
 import { z } from "zod";
 
 import { saleorEnvSchema } from "@/infrastructure/integrations/saleor/env/schema";
-import { awsConfigSchema, baseConfigSchema } from "@/lib/config/schema";
+import { appConfigEnvSchema, awsConfigSchema, baseConfigSchema } from "@/lib/config/schema";
 import { prepareConfig } from "@/lib/config/util";
 
 const configSchema = z
   .object({
     SERVICE: z.string().default("dashboard"),
-    SECRET_MANAGER_APP_CONFIG_PATH: z.string(),
   })
   .and(saleorEnvSchema)
   .and(baseConfigSchema)
-  .and(awsConfigSchema);
+  .and(awsConfigSchema)
+  .and(appConfigEnvSchema);
 
 export const APP_CONFIG = prepareConfig({
   name: "dashboard",

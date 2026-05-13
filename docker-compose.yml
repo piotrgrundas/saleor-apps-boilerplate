@@ -4,13 +4,13 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=secretsmanager
+      - SERVICES=secretsmanager,ssm,kms
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-dummy}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-dummy}
       - AWS_REGION=${AWS_REGION:-ap-southeast-1}
       - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-http://host.docker.internal:4566}
       - DEBUG=${DEBUG:-0}
-      - SECRET_MANAGER_APP_CONFIG_PATH=${SECRET_MANAGER_APP_CONFIG_PATH?:SECRET_MANAGER_APP_CONFIG_PATH env is required}
+      - APP_CONFIG_STORE_PATH=${APP_CONFIG_STORE_PATH?:APP_CONFIG_STORE_PATH env is required}
     volumes:
       - "./localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"

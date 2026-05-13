@@ -159,18 +159,19 @@ The handler app wraps Hono with a Lambda-compatible handler, so it can be deploy
 
 ## Environment Variables
 
-| Variable                         | Description                              | Default             |
-| -------------------------------- | ---------------------------------------- | ------------------- |
-| `PORT`                           | Server port                              | `3000`              |
-| `SALEOR_URL`                     | Saleor instance URL                      | —                   |
-| `LOG_LEVEL`                      | Logging level (debug, info, warn, error) | `debug`             |
-| `AWS_ACCESS_KEY_ID`              | AWS access key                           | —                   |
-| `AWS_SECRET_ACCESS_KEY`          | AWS secret key                           | —                   |
-| `AWS_REGION`                     | AWS region                               | `us-east-1`         |
-| `SECRET_MANAGER_APP_CONFIG_PATH` | Secrets Manager secret name              | `saleor-app-config` |
-| `AWS_ENDPOINT_URL`               | Custom AWS endpoint (LocalStack)         | —                   |
-| `SALEOR_UI_APP_TOKEN`            | Dashboard token for standalone dev       | —                   |
-| `BASE_PATH`                      | URL prefix for the app                   | —                   |
+| Variable                | Description                              | Default              |
+| ----------------------- | ---------------------------------------- | -------------------- |
+| `PORT`                  | Server port                              | `3000`               |
+| `SALEOR_URL`            | Saleor instance URL                      | —                    |
+| `LOG_LEVEL`             | Logging level (debug, info, warn, error) | `debug`              |
+| `AWS_ACCESS_KEY_ID`     | AWS access key                           | —                    |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key                           | —                    |
+| `AWS_REGION`            | AWS region                               | `us-east-1`          |
+| `APP_CONFIG_STORE_PATH` | Parameter Store root path                | `/saleor/app-config` |
+| `APP_CONFIG_KMS_KEY_ID` | Optional KMS key for SecureString        | AWS-managed          |
+| `AWS_ENDPOINT_URL`      | Custom AWS endpoint (LocalStack)         | —                    |
+| `SALEOR_UI_APP_TOKEN`   | Dashboard token for standalone dev       | —                    |
+| `BASE_PATH`             | URL prefix for the app                   | —                    |
 
 ## CI/CD
 
@@ -178,3 +179,42 @@ GitHub Actions workflows run on every PR:
 
 - **test.yml** — Installs dependencies and runs the test suite
 - **code_quality.yml** — Runs linting, type checking, and tests
+
+## awslocal commands
+
+List secretmanager secrets
+
+```
+awslocal secretsmanager list-secrets --no-cli-pager \
+  --endpoint-url=http://localhost:4566 \
+  --region ap-southeast-1
+```
+
+Read secret value
+
+```
+awslocal secretsmanager get-secret-value --no-cli-pager \
+  --region ap-southeast-1 \
+  --secret-id "saleor-app-config" \
+  --query 'SecretString' \
+  --output text | jq .
+```
+
+List parameter store paths
+
+```
+awslocal ssm describe-parameters --no-cli-pager \
+  --endpoint-url=http://localhost:4566 \
+  --region ap-southeast-1
+```
+
+Read parameter path value
+
+```
+awslocal ssm get-parameter --no-cli-pager \
+  --region ap-southeast-1 \
+  --name "/saleor-app-config/projectluna-dev.eu.saleor.cloud" \
+  --with-decryption \
+  --query 'Parameter.Value' \
+  --output text | jq .
+```

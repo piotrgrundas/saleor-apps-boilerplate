@@ -14,6 +14,7 @@ export const APPS_DIR = path.resolve("src/apps");
  */
 export const SERVER_EXTERNALS = [
   { name: "@aws-sdk/client-secrets-manager", reason: "lambda-provided" },
+  { name: "@aws-sdk/client-ssm", reason: "lambda-provided" },
   { name: "@sentry/aws-serverless", reason: "install" },
   { name: "@cacheable/node-cache", reason: "install" },
 ] as const;

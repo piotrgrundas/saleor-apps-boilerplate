@@ -1,7 +1,7 @@
 import { inspect } from "node:util";
 import { Logger as TsLog, type ILogObj } from "tslog";
 
-import type { Logger, LogLevel } from "@/domain/ports/logger";
+import type { Logger, LoggerOptions, LogLevel } from "@/domain/ports/logger";
 
 import { redactSensitive } from "../utils";
 
@@ -94,7 +94,7 @@ const toLogger = (tslog: TsLog<ILogObj>, context: Record<string, unknown> = {}):
   };
 };
 
-export const createTsLogLogger = ({ level, name }: { level: LogLevel; name?: string }): Logger =>
+export const createTsLogLogger = ({ level, name }: LoggerOptions): Logger =>
   toLogger(
     new TsLog<ILogObj>({
       name,

@@ -10,33 +10,33 @@ import { err, ok } from "neverthrow";
 import type { Context } from "@/domain/context";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { AppConfigErrorCode } from "@/domain/errors/scopes/app-config";
-import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
+import type {
+  AppConfigRepository,
+  AppConfigRepositoryOptions,
+} from "@/domain/ports/app-config-repository";
 import {
   saleorAppConfigMapSchema,
   type SaleorAppConfig,
 } from "@/infrastructure/integrations/saleor/app-config/schema";
+import { awsConfigSchema } from "@/lib/config/schema";
+import { prepareConfig } from "@/lib/config/util";
 import { getErrorMessage } from "@/lib/error/helpers";
 
-type AwsSecretManagerOptions = {
-  region: string;
-  secretPath: string;
-  endpoint?: string;
-};
-
-export const createAwsSecretManagerAppConfigRepository = (
-  options: AwsSecretManagerOptions,
-): AppConfigRepository => {
-  const client = new SecretsManagerClient({
-    region: options.region,
-    ...(options.endpoint ? { endpoint: options.endpoint } : {}),
+export const createAwsSecretManagerAppConfigRepository = ({
+  configPath,
+}: AppConfigRepositoryOptions): AppConfigRepository => {
+  prepareConfig({
+    name: "AwsSecretManagerAppConfigRepository",
+    schema: awsConfigSchema,
   });
-  const secretPath = options.secretPath;
+
+  const client = new SecretsManagerClient();
 
   const getConfigMap = async (
     ctx: Context,
   ): AsyncResult<Record<string, SaleorAppConfig>, AppConfigErrorCode> => {
     try {
-      const command = new GetSecretValueCommand({ SecretId: secretPath });
+      const command = new GetSecretValueCommand({ SecretId: configPath });
       const response = await client.send(command);
 
       if (!response.SecretString) {
@@ -52,13 +52,13 @@ export const createAwsSecretManagerAppConfigRepository = (
         return ok({});
       }
       ctx.logger.error("Failed to read app config from AWS Secrets Manager", {
-        secretPath,
+        configPath,
         cause: error,
       });
       return err([
         {
           code: "APP_CONFIG_READ_ERROR",
-          message: `Failed to read config - ${secretPath} - from AWS Secrets Manager: ${getErrorMessage(error)}`,
+          message: `Failed to read config - ${configPath} - from AWS Secrets Manager: ${getErrorMessage(error)}`,
           details: { cause: error },
         },
       ]);
@@ -73,22 +73,31 @@ export const createAwsSecretManagerAppConfigRepository = (
 
     try {
       await client.send(
-        new PutSecretValueCommand({ SecretId: secretPath, SecretString: secretString }),
+        new PutSecretValueCommand({
+          SecretId: configPath,
+          SecretString: secretString,
+        }),
       );
+
       return ok(undefined);
     } catch (error) {
       if (error instanceof ResourceNotFoundException) {
         try {
-          ctx.logger.info("Secret not found; creating", { secretPath });
+          ctx.logger.info("Secret not found; creating", { configPath });
           await client.send(
-            new CreateSecretCommand({ Name: secretPath, SecretString: secretString }),
+            new CreateSecretCommand({
+              Name: configPath,
+              SecretString: secretString,
+            }),
           );
+
           return ok(undefined);
         } catch (createError) {
           ctx.logger.error("Failed to create app config secret", {
-            secretPath,
+            configPath,
             cause: createError,
           });
+
           return err([
             {
               code: "APP_CONFIG_WRITE_ERROR",
@@ -99,9 +108,10 @@ export const createAwsSecretManagerAppConfigRepository = (
         }
       }
       ctx.logger.error("Failed to write app config to AWS Secrets Manager", {
-        secretPath,
+        configPath,
         cause: error,
       });
+
       return err([
         {
           code: "APP_CONFIG_WRITE_ERROR",
@@ -134,6 +144,7 @@ export const createAwsSecretManagerAppConfigRepository = (
       if (configMapResult.isErr()) return err(configMapResult.error);
 
       delete configMapResult.value[saleorDomain];
+
       return saveConfigMap(configMapResult.value, ctx);
     },
   };

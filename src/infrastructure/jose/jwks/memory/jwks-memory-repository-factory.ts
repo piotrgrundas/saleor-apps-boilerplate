@@ -5,20 +5,22 @@ import type { AsyncResult } from "@/domain/errors/result";
 import type { JwksErrorCode } from "@/domain/errors/scopes/jwks";
 import type {
   JsonWebKeySet,
-  JWKSRepositoryFactory,
+  JWKSRepository,
+  JWKSRepositoryOptions,
 } from "@/domain/ports/jwks-repository";
+import type { Logger } from "@/domain/ports/logger";
 import { getErrorMessage } from "@/lib/error/helpers";
-import { Logger } from "@/domain/ports/logger";
 
-const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
+const DEFAULT_CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 const jwksUrlFor = (issuer: string): string => {
   const { origin } = new URL(issuer);
   return `${origin}/.well-known/jwks.json`;
 };
 
-export const createJwksRepositoryFactory: JWKSRepositoryFactory = () => {
-  const cache = new NodeCache<JsonWebKeySet>({ stdTTL: CACHE_TTL_SECONDS });
+export const createJwksRepositoryFactory = (opts?: JWKSRepositoryOptions): JWKSRepository => {
+  const stdTTL = opts?.cacheTtlSeconds ?? DEFAULT_CACHE_TTL_SECONDS;
+  const cache = new NodeCache<JsonWebKeySet>({ stdTTL });
 
   const fetchJwks = async ({
     jwksUrl,
