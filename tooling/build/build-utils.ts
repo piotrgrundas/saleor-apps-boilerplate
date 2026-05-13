@@ -9,15 +9,9 @@ export const APPS_DIR = path.resolve("src/apps");
 
 /**
  * Lambda runtime provides these — keep external, never bundle.
- * - `@aws-sdk/*`: AWS Lambda Node 24 runtime.
- * - `@sentry/*`, `@opentelemetry/*`: Sentry Lambda Layer.
  * Everything else gets bundled into the server output.
  */
-export const SERVER_EXTERNALS = [
-  /^@aws-sdk\//,
-  /^@sentry\//,
-  /^@opentelemetry\//,
-] as const;
+export const SERVER_EXTERNALS = [/^@aws-sdk\//] as const;
 
 export type AppEntry = { name: string; entryPath: string };
 

@@ -9,25 +9,26 @@ import { createTestRequest } from "@/lib/test/request";
 import { createLoggingMiddleware } from "./logging-middleware";
 
 function createSpyLogger() {
-  const debugCalls: Array<{ message: string; meta?: Record<string, unknown> }> = [];
+  const infoCalls: Array<{ message: string; meta?: Record<string, unknown> }> = [];
+
   const withTagCalls: string[] = [];
   const logger = createMockLogger();
 
-  logger.debug = (message, meta) => {
-    debugCalls.push({ message, meta });
+  logger.info = (message, meta) => {
+    infoCalls.push({ message, meta });
   };
   logger.withTag = (tag: string) => {
     withTagCalls.push(tag);
     return logger;
   };
 
-  return { logger, debugCalls, withTagCalls };
+  return { logger, infoCalls, withTagCalls };
 }
 
 describe("createLoggingMiddleware", () => {
   it("logs request entry and response exit", async () => {
     // given
-    const { logger, debugCalls } = createSpyLogger();
+    const { logger, infoCalls } = createSpyLogger();
     const app = createTestApp();
     app.use("*", createLoggingMiddleware(logger));
     app.get("/test", (context) => context.text("ok"));
@@ -36,9 +37,9 @@ describe("createLoggingMiddleware", () => {
     await app.request(createTestRequest("/test", { method: "GET" }));
 
     // then
-    expect(debugCalls).toHaveLength(2);
-    expect(debugCalls[0].message).toBe("GET ⇒ /test");
-    expect(debugCalls[1].message).toMatch(/^GET ⇐ 200 \(\d+ms\) \/test$/);
+    expect(infoCalls).toHaveLength(2);
+    expect(infoCalls[0].message).toBe("GET ⇒ /test");
+    expect(infoCalls[1].message).toMatch(/^GET ⇐ 200 \(\d+ms\) \/test$/);
   });
 
   it("sets logger in context", async () => {
@@ -66,7 +67,7 @@ describe("createLoggingMiddleware", () => {
     { desc: "js file", path: "/app.js" },
   ])("skips logging for $desc", async ({ path }) => {
     // given
-    const { logger, debugCalls } = createSpyLogger();
+    const { logger, infoCalls } = createSpyLogger();
     const app = createTestApp();
     app.use("*", createLoggingMiddleware(logger));
     app.get(path, (context) => context.text("ok"));
@@ -75,12 +76,12 @@ describe("createLoggingMiddleware", () => {
     await app.request(createTestRequest(path, { method: "GET" }));
 
     // then
-    expect(debugCalls).toHaveLength(0);
+    expect(infoCalls).toHaveLength(0);
   });
 
   it("respects custom skip predicate", async () => {
     // given
-    const { logger, debugCalls } = createSpyLogger();
+    const { logger, infoCalls } = createSpyLogger();
     const app = createTestApp();
     app.use(
       "*",
@@ -94,6 +95,6 @@ describe("createLoggingMiddleware", () => {
     await app.request(createTestRequest("/health", { method: "GET" }));
 
     // then
-    expect(debugCalls).toHaveLength(0);
+    expect(infoCalls).toHaveLength(0);
   });
 });

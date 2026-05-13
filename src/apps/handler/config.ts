@@ -8,7 +8,6 @@ const configSchema = z
   .object({
     ALLOWED_DOMAINS: z.array(z.string()).default(["*"]),
     SERVICE: z.string().default("handler"),
-    SENTRY_DSN: z.url().optional(),
   })
   .and(saleorEnvSchema)
   .and(baseConfigSchema)

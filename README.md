@@ -77,45 +77,26 @@ Handler wraps Hono with a Lambda adapter — drop-in serverless. `tooling/lambda
 Server bundle externals (`tooling/build/build-utils.ts`) — kept external because the runtime provides them:
 
 - `@aws-sdk/*` — AWS Lambda Node 24 runtime
-- `@sentry/*`, `@opentelemetry/*` — Sentry Lambda Layer (see below)
 
-Everything else gets bundled. No per-app `pnpm install` step.
+Everything else (including `@sentry/node`) gets bundled. No Lambda Layer required.
 
-### Sentry Lambda Layer (required for error reporting)
+### Sentry (error reporting)
 
-Sentry SDK is **not bundled** — it's provided at runtime by the AWS Lambda Layer. Auto-instrumentation kicks in via `NODE_OPTIONS` preload; the app code only calls `Sentry.captureException` in the error handler.
+Sentry is bundled via `@sentry/node` with `defaultIntegrations: false` — only error capture is active, no OpenTelemetry auto-instrumentation. Init reads `SENTRY_DSN` at startup; without it, capture is a silent no-op.
 
-Wire this up in Terraform (or your IaC):
+Lambda env vars:
 
 ```hcl
-resource "aws_lambda_function" "handler" {
-  # ...
-  runtime       = "nodejs24.x"
-  architectures = ["arm64"]
-
-  layers = [
-    # Lookup the latest ARN for your region + architecture:
-    # https://docs.sentry.io/platforms/javascript/guides/aws-lambda/install/layer/
-    "arn:aws:lambda:eu-central-1:943013980633:layer:SentryNodeServerlessSDKv10:<VERSION>"
-  ]
-
-  environment {
-    variables = {
-      NODE_OPTIONS              = "-r @sentry/aws-serverless/awslambda-auto"
-      SENTRY_DSN                = var.sentry_dsn
-      SENTRY_TRACES_SAMPLE_RATE = "0.1"
-      SENTRY_ENVIRONMENT        = var.environment
-      # Optional: SENTRY_RELEASE, SENTRY_PROFILES_SAMPLE_RATE
-    }
+environment {
+  variables = {
+    SENTRY_DSN         = var.sentry_dsn
+    SENTRY_ENVIRONMENT = var.environment
+    # Optional: SENTRY_RELEASE
   }
 }
 ```
 
-The Sentry SDK is imported **lazily** in `src/infrastructure/logging/sentry/instrument.ts` (dynamic `import()` wrapped in try/catch). So:
-
-- **With Layer attached + `SENTRY_DSN`**: errors flow to Sentry. Auto-init via `NODE_OPTIONS=-r @sentry/aws-serverless/awslambda-auto`.
-- **Without Layer**: dynamic import fails, capture is a silent no-op. Lambda still loads and serves traffic; you lose only error reporting.
-- **Local dev**: `@sentry/aws-serverless` is in `dependencies` (installed locally), so the import succeeds but Sentry stays uninitialized without `SENTRY_DSN`. Capture is a no-op. Call `Sentry.init({ dsn: ... })` from a dev entry if you want local reporting.
+To enable tracing/profiling later, edit `src/infrastructure/integrations/sentry/sentry-error-reporter.ts` — flip `defaultIntegrations` to `true` and set `tracesSampleRate`. Or swap to the Sentry Lambda Layer (see [Sentry docs](https://docs.sentry.io/platforms/javascript/guides/aws-lambda/install/layer/)) for full OTel.
 
 ## awslocal commands
 

@@ -2,10 +2,35 @@ import { z } from "zod";
 
 import { LOG_LEVELS } from "@/domain/ports/logger";
 
-export const baseConfigSchema = z.object({
-  LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
-  BASE_PATH: z.string().default(""),
-});
+import pkg from "@/../package.json";
+
+export const ENVIRONMENTS = ["local", "development", "staging", "production"] as const;
+export type Environment = (typeof ENVIRONMENTS)[number];
+
+export const baseConfigSchema = z
+  .object({
+    LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
+    BASE_PATH: z.string().default(""),
+    ENVIRONMENT: z.enum(ENVIRONMENTS).default("local"),
+    SENTRY_DSN: z.url().optional(),
+  })
+  .transform((data) => {
+    const NAME = pkg.name;
+    const VERSION = pkg.version;
+    const RELEASE = `${NAME}@${VERSION}`.toLowerCase().replaceAll("-", "_");
+
+    return {
+      AUTHOR: pkg.author,
+      DESCRIPTION: pkg.description,
+      IS_DEVELOPMENT: process.env.NODE_ENV === "development",
+      IS_PRODUCTION: process.env.NODE_ENV === "production",
+      IS_TEST: process.env.NODE_ENV === "test",
+      NAME,
+      RELEASE,
+      VERSION,
+      ...data,
+    };
+  });
 
 /**
  * Base AWS configuration schema. Aws SDK related libs inject

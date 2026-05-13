@@ -10,16 +10,25 @@ const STATIC_PATH_RE =
 const isStaticRequest = (context: Context) => STATIC_PATH_RE.test(context.req.path);
 
 type Options = {
+  environment?: string;
+  isProduction?: boolean;
   skip?: (context: Context) => boolean;
 };
 
 export function createLoggingMiddleware(logger: Logger, options: Options = {}) {
-  const { skip = isStaticRequest } = options;
+  const { environment, isProduction = false, skip = isStaticRequest } = options;
 
   return createMiddleware(async (context, next) => {
     const elapsed = getElapsedTime();
-    const requestId = context.req.header("x-request-id") ?? crypto.randomUUID();
-    const requestLogger = logger.withContext({ requestId, path: context.req.path });
+    const requestId = context.get("requestId");
+    const requestLogger = logger.withContext({
+      requestId,
+      ...(isProduction && {
+        path: context.req.path,
+        environment,
+        method: context.req.method,
+      }),
+    });
 
     context.set("logger", requestLogger);
 
@@ -28,12 +37,23 @@ export function createLoggingMiddleware(logger: Logger, options: Options = {}) {
       return;
     }
 
-    requestLogger.debug(`${context.req.method} ⇒ ${context.req.path}`);
+    if (isProduction) {
+      requestLogger.info("Incoming request");
+    } else {
+      requestLogger.info(`${context.req.method} ⇒ ${context.req.path}`);
+    }
 
     await next();
 
-    requestLogger.debug(
-      `${context.req.method} ⇐ ${context.res.status} (${elapsed()}ms) ${context.req.path}`,
-    );
+    if (isProduction) {
+      requestLogger.info("Outgoing response", {
+        requestTime: `${elapsed()}ms`,
+        status: context.res.status,
+      });
+    } else {
+      requestLogger.info(
+        `${context.req.method} ⇐ ${context.res.status} (${elapsed()}ms) ${context.req.path}`,
+      );
+    }
   });
 }

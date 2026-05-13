@@ -14,7 +14,7 @@ import { createRequestOriginMiddleware } from "@/lib/middleware/request-origin-m
 import { configurationRoutes } from "./api/rest/configuration/routes";
 import { APP_CONFIG } from "./config";
 
-const logger = container.get("logger");
+const { logger, errorReporter } = container.items;
 
 const app = new Hono().basePath(APP_CONFIG.BASE_PATH as "/");
 
@@ -23,7 +23,13 @@ app.onError(createErrorHandler(logger));
 
 // Middleware stack
 app.use("*", requestId());
-app.use("*", createLoggingMiddleware(logger));
+app.use(
+  "*",
+  createLoggingMiddleware(logger, {
+    environment: APP_CONFIG.ENVIRONMENT,
+    isProduction: APP_CONFIG.IS_PRODUCTION,
+  }),
+);
 app.use("*", createAssetsMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", createPublicFilesMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", createRequestOriginMiddleware({ basePath: APP_CONFIG.BASE_PATH }));
@@ -37,8 +43,7 @@ app.get("/client/*", createClientEntryPoint("dashboard"));
 
 export type AppType = typeof app;
 
-// AWS Lambda handler
-export const handler = handle(app);
+export const handler = errorReporter.wrap(handle(app));
 
 // Default export for local development
 export default app;

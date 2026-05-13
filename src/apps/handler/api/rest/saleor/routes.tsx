@@ -29,10 +29,10 @@ routes.get("/manifest", (context) => {
   const baseUrl = context.get("baseUrl");
 
   const manifest: SaleorAppManifest = {
-    id: `${pkg.name.toLowerCase().replace(/\s+/g, "-")}.app`,
-    version: pkg.version,
-    name: pkg.name,
-    about: pkg.description,
+    id: `${APP_CONFIG.NAME.toLowerCase().replace(/\s+/g, "-")}.app`,
+    version: APP_CONFIG.VERSION,
+    name: APP_CONFIG.NAME,
+    about: APP_CONFIG.DESCRIPTION,
     permissions: ["MANAGE_PRODUCTS"],
     appUrl: `${baseUrl}/client/app`,
     tokenTargetUrl: `${baseUrl}/api/saleor/register`,
@@ -52,6 +52,8 @@ routes.get("/manifest", (context) => {
       },
     ],
   };
+
+  context.get("logger").error("OH NOOO! SENTRY LAYER HELP!");
 
   return context.json(manifest);
 });

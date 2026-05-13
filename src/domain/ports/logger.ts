@@ -1,3 +1,5 @@
+import type { ErrorReporter } from "./error-reporter";
+
 export const LOG_LEVELS = ["trace", "debug", "info", "warn", "error"] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
@@ -16,6 +18,11 @@ export type LoggerOptions = {
    */
   name?: string;
   prettify?: boolean;
+  /**
+   * When provided, every `.error(...)` call also forwards to the reporter
+   * (Sentry, etc.). Sub-loggers from `withTag` / `withContext` inherit it.
+   */
+  reporter?: ErrorReporter;
 };
 
 export type Logger = {
