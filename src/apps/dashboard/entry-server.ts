@@ -23,7 +23,7 @@ app.onError(createErrorHandler(logger));
 
 // Middleware stack
 app.use("*", requestId());
-app.use("*", createLoggingMiddleware(logger, { service: APP_CONFIG.SERVICE }));
+app.use("*", createLoggingMiddleware(logger));
 app.use("*", createAssetsMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", createPublicFilesMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", createRequestOriginMiddleware({ basePath: APP_CONFIG.BASE_PATH }));

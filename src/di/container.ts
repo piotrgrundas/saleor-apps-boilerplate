@@ -17,7 +17,7 @@ export type GlobalContainerConfig = {
 export const createGlobalContainer = (config: GlobalContainerConfig) =>
   createContainer()
     .add({
-      logger: () => createLogger({ level: config.LOG_LEVEL, name: config.SERVICE }),
+      logger: () => createLogger({ prettify: true, level: config.LOG_LEVEL, name: config.SERVICE }),
     })
     .add({
       jwksRepository: () => createJwks(),

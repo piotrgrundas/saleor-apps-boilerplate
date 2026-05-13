@@ -15,6 +15,7 @@ export type LoggerOptions = {
    * `withTag` / `withContext` at the request boundary.
    */
   name?: string;
+  prettify?: boolean;
 };
 
 export type Logger = {

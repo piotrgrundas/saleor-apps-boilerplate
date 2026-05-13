@@ -8,55 +8,71 @@ export const DIST_DIR = path.resolve("dist");
 export const APPS_DIR = path.resolve("src/apps");
 
 /**
- * Packages excluded from the server bundle.
- * - "lambda-provided": available in the AWS Lambda runtime, no install needed.
- * - "install": must be installed into dist/{appName}/node_modules/ at build time.
+ * Lambda runtime provides these — keep external, never bundle.
+ * - `@aws-sdk/*`: AWS Lambda Node 24 runtime.
+ * - `@sentry/*`, `@opentelemetry/*`: Sentry Lambda Layer.
+ * Everything else gets bundled into the server output.
  */
 export const SERVER_EXTERNALS = [
-  { name: "@aws-sdk/client-secrets-manager", reason: "lambda-provided" },
-  { name: "@aws-sdk/client-ssm", reason: "lambda-provided" },
-  { name: "@sentry/aws-serverless", reason: "install" },
-  { name: "@cacheable/node-cache", reason: "install" },
+  /^@aws-sdk\//,
+  /^@sentry\//,
+  /^@opentelemetry\//,
 ] as const;
 
-export type ExternalReason = (typeof SERVER_EXTERNALS)[number]["reason"];
-
-export interface AppEntry {
-  name: string;
-  entryPath: string;
-}
+export type AppEntry = { name: string; entryPath: string };
 
 export function discoverEntryPoints(filename: string): AppEntry[] {
   if (!fs.existsSync(APPS_DIR)) return [];
+  return fs
+    .readdirSync(APPS_DIR)
+    .map((dir) => ({ name: dir, entryPath: path.join(APPS_DIR, dir, filename) }))
+    .filter((e) => fs.existsSync(e.entryPath));
+}
 
-  const entries: AppEntry[] = [];
-  for (const dir of fs.readdirSync(APPS_DIR)) {
-    const entryPath = path.join(APPS_DIR, dir, filename);
-    if (fs.existsSync(entryPath)) {
-      entries.push({ name: dir, entryPath });
-    }
-  }
-  return entries;
+const SHARED = {
+  configFile: false as const,
+  root: process.cwd(),
+  resolve: {
+    alias: [
+      { find: "@/constants", replacement: path.resolve("constants.ts") },
+      { find: /^@\//, replacement: path.resolve("src") + "/" },
+    ],
+  },
+  logLevel: "warn" as const,
+};
+
+export async function buildServer(app: AppEntry, options: { minify: boolean; nodeEnv: string }) {
+  const outDir = path.join(DIST_DIR, app.name);
+
+  await viteBuild({
+    ...SHARED,
+    define: { "process.env.NODE_ENV": JSON.stringify(options.nodeEnv) },
+    build: {
+      outDir,
+      emptyOutDir: false,
+      ssr: app.entryPath,
+      minify: options.minify,
+      target: "node24",
+      rollupOptions: {
+        external: [...SERVER_EXTERNALS],
+        output: { entryFileNames: "[name].js" },
+      },
+    },
+    ssr: { target: "node", noExternal: true },
+  });
+
+  console.log(`  ${app.name} → ${outDir}`);
 }
 
 export async function buildClient(app: AppEntry, options: { minify: boolean; nodeEnv: string }) {
-  const outdir = path.join(DIST_DIR, app.name, "assets");
-  fs.mkdirSync(outdir, { recursive: true });
+  const outDir = path.join(DIST_DIR, app.name, "assets");
 
   await viteBuild({
-    configFile: false,
-    root: process.cwd(),
+    ...SHARED,
     plugins: [react() as any],
-    resolve: {
-      alias: {
-        "@": path.resolve("src"),
-      },
-    },
-    define: {
-      "process.env.NODE_ENV": JSON.stringify(options.nodeEnv),
-    },
+    define: { "process.env.NODE_ENV": JSON.stringify(options.nodeEnv) },
     build: {
-      outDir: outdir,
+      outDir,
       emptyOutDir: true,
       minify: options.minify ? "esbuild" : false,
       cssCodeSplit: false,
@@ -68,8 +84,7 @@ export async function buildClient(app: AppEntry, options: { minify: boolean; nod
         },
       },
     },
-    logLevel: "warn",
   });
 
-  console.log(`${app.name} → ${outdir}`);
+  console.log(`  ${app.name} → ${outDir}`);
 }

@@ -29,7 +29,7 @@ describe("createLoggingMiddleware", () => {
     // given
     const { logger, debugCalls } = createSpyLogger();
     const app = createTestApp();
-    app.use("*", createLoggingMiddleware(logger, { service: "test" }));
+    app.use("*", createLoggingMiddleware(logger));
     app.get("/test", (context) => context.text("ok"));
 
     // when
@@ -46,7 +46,7 @@ describe("createLoggingMiddleware", () => {
     const { logger } = createSpyLogger();
     let contextLogger: unknown;
     const app = createTestApp();
-    app.use("*", createLoggingMiddleware(logger, { service: "test" }));
+    app.use("*", createLoggingMiddleware(logger));
     app.get("/test", (context: Context) => {
       contextLogger = context.get("logger");
       return context.text("ok");
@@ -59,20 +59,6 @@ describe("createLoggingMiddleware", () => {
     expect(contextLogger).toBeDefined();
   });
 
-  it("tags logger with service name", async () => {
-    // given
-    const { logger, withTagCalls } = createSpyLogger();
-    const app = createTestApp();
-    app.use("*", createLoggingMiddleware(logger, { service: "handler" }));
-    app.get("/test", (context) => context.text("ok"));
-
-    // when
-    await app.request(createTestRequest("/test", { method: "GET" }));
-
-    // then
-    expect(withTagCalls).toContain("handler");
-  });
-
   it.each([
     { desc: "favicon.ico", path: "/favicon.ico" },
     { desc: "assets path", path: "/assets/main.css" },
@@ -82,7 +68,7 @@ describe("createLoggingMiddleware", () => {
     // given
     const { logger, debugCalls } = createSpyLogger();
     const app = createTestApp();
-    app.use("*", createLoggingMiddleware(logger, { service: "test" }));
+    app.use("*", createLoggingMiddleware(logger));
     app.get(path, (context) => context.text("ok"));
 
     // when
@@ -99,7 +85,6 @@ describe("createLoggingMiddleware", () => {
     app.use(
       "*",
       createLoggingMiddleware(logger, {
-        service: "test",
         skip: (context) => context.req.path.startsWith("/health"),
       }),
     );

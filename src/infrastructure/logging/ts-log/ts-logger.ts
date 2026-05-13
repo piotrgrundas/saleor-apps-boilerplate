@@ -85,20 +85,16 @@ const toLogger = (tslog: TsLog<ILogObj>, context: Record<string, unknown> = {}):
     info: emit("info"),
     warn: emit("warn"),
     error: emit("error"),
-    withTag: (tag) => {
-      const parent = tslog.settings.name;
-      const name = parent ? `${parent}:${tag}` : tag;
-      return toLogger(tslog.getSubLogger({ name }), context);
-    },
+    withTag: (tag) => toLogger(tslog.getSubLogger({ name: tag }), context),
     withContext: (extra) => toLogger(tslog, { ...context, ...extra }),
   };
 };
 
-export const createTsLogLogger = ({ level, name }: LoggerOptions): Logger =>
+export const createTsLogLogger = ({ level, name, prettify = true }: LoggerOptions): Logger =>
   toLogger(
     new TsLog<ILogObj>({
       name,
-      type: "pretty",
+      type: prettify ? "pretty" : "json",
       minLevel: TSLOG_LEVEL[level],
       prettyLogTemplate: "[{{hh}}:{{MM}}:{{ss}}][{{name}}] {{logLevelName}} ",
       prettyLogStyles: STYLES,

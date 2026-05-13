@@ -3,7 +3,6 @@ import { handle } from "hono/aws-lambda";
 import { requestId } from "hono/request-id";
 
 import { container } from "@/apps/handler/di/container";
-import { initSentry, Sentry } from "@/infrastructure/logging/sentry/instrument";
 import { createErrorHandler } from "@/lib/error/handler";
 import { createAssetsMiddleware } from "@/lib/middleware/assets-middleware";
 import { healthCheckMiddleware } from "@/lib/middleware/health-check-middleware";
@@ -15,9 +14,6 @@ import { graphqlApp } from "./api/graphql";
 import { saleorApi } from "./api/rest/saleor";
 import { APP_CONFIG } from "./config";
 
-// Initialize Sentry for error reporting
-initSentry();
-
 const logger = container.get("logger");
 
 const app = new Hono().basePath(APP_CONFIG.BASE_PATH as "/");
@@ -27,7 +23,7 @@ app.onError(createErrorHandler(logger));
 
 // Middleware stack
 app.use("*", requestId());
-app.use("*", createLoggingMiddleware(logger, { service: APP_CONFIG.SERVICE }));
+app.use("*", createLoggingMiddleware(logger));
 app.use("*", createAssetsMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", createPublicFilesMiddleware(APP_CONFIG.BASE_PATH));
 app.use("*", createRequestOriginMiddleware({ basePath: APP_CONFIG.BASE_PATH }));
@@ -39,8 +35,8 @@ app.route("/graphql", graphqlApp);
 
 export type AppType = typeof app;
 
-// AWS Lambda handler
-export const handler = Sentry.wrapHandler(handle(app));
+// AWS Lambda handler (Sentry auto-wraps via NODE_OPTIONS preload)
+export const handler = handle(app);
 
 // Default export for local development
 export default app;
