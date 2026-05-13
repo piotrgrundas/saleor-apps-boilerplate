@@ -2,10 +2,10 @@
 set -euo pipefail
 
 echo "Installing dependencies..."
-bun install --frozen-lockfile
+pnpm install --frozen-lockfile
 
 echo "Building..."
-bun run build
+pnpm run build
 
 echo "Creating deployment artifact..."
 cd dist

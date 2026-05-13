@@ -1,17 +1,17 @@
 ---
 name: code-style-guidelines
-description: General code style rules for this project that aren't enforced by the toolchain (Deno fmt + lint, no eslint). Today covers import grouping; expand as new conventions are agreed. Use whenever you write or modify any `.ts` / `.tsx` file — even without words like "style" / "format". Triggers: "add an import", "fix import order", "clean up this file", "the imports look messy", any new module creation, or any code review of style concerns the formatter doesn't catch.
+description: General code style rules for this project that aren't enforced by the toolchain (`vp check`). Today covers import grouping; expand as new conventions are agreed. Use whenever you write or modify any `.ts` / `.tsx` file — even without words like "style" / "format". Triggers: "add an import", "fix import order", "clean up this file", "the imports look messy", any new module creation, or any code review of style concerns the formatter doesn't catch.
 ---
 
 # Code style guidelines
 
-Conventions enforced by reviewers, not by tooling. Project uses `deno fmt` + `deno lint`; anything below is on top of those.
+Conventions enforced by reviewers, not by tooling. Project uses `vp check` (vite-plus); anything below is on top of that.
 
 > **Universal TypeScript style** (`prefer type over interface`, `import type` for type-only imports) lives in the user-level `typescript-style` skill at `~/.claude/skills/typescript-style/SKILL.md`. Apply both — this project skill is additive.
 
 ## Imports — grouping
 
-When the toolchain has no import sorter (no `eslint-plugin-simple-import-sort`, no `sort-imports`, no `deno fmt` `sortImports`), keep imports tidy by hand: three groups, single blank line between each.
+When the toolchain has no import sorter (no `eslint-plugin-simple-import-sort`, no `sort-imports`), keep imports tidy by hand: three groups, single blank line between each.
 
 ### Group order
 

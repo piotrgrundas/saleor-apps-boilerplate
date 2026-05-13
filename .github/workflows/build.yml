@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  # push:
+  #   branches:
+  #     - "*"
+  #   tags:
+  #     - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_DEFAULT_REGION: eu-central-1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GIT_DESCRIBE variable
+        run: |
+          echo "GIT_DESCRIBE=$(git describe --broken --tags --always)" >> $GITHUB_ENV
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Build zip
+        run: bash tooling/lambda/package.sh
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Copy ZIP
+        run: aws s3 cp artifact.zip "$AWS_BUCKET/lambda-$GIT_DESCRIBE.zip" --quiet
+        env:
+          AWS_BUCKET: ${{ vars.AWS_BUCKET }}
+          GIT_DESCRIBE: ${{ env.GIT_DESCRIBE }}
+
+      - name: ZIP tag
+        run: echo "$GIT_DESCRIBE"
+        env:
+          GIT_DESCRIBE: ${{ env.GIT_DESCRIBE }}
