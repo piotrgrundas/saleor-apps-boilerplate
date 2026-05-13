@@ -1,9 +1,8 @@
 import { inspect } from "node:util";
 import { Logger as TsLog, type ILogObj } from "tslog";
 
-import type { Logger } from "@/domain/ports/logger";
+import type { Logger, LogLevel } from "@/domain/ports/logger";
 
-import type { LogLevel } from "../types";
 import { redactSensitive } from "../utils";
 
 /**
@@ -73,10 +72,7 @@ const mergeMeta = (
   return { ...context, ...meta };
 };
 
-const toLogger = (
-  tslog: TsLog<ILogObj>,
-  context: Record<string, unknown> = {},
-): Logger => {
+const toLogger = (tslog: TsLog<ILogObj>, context: Record<string, unknown> = {}): Logger => {
   const format = tslog.settings.type === "pretty" ? formatPretty : formatRaw;
   const emit =
     (level: "trace" | "debug" | "info" | "warn" | "error") =>

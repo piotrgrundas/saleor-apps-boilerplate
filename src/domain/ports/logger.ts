@@ -1,3 +1,5 @@
+export type LogLevel = "trace" | "debug" | "info" | "warn" | "error";
+
 export type Logger = {
   trace(message: string, meta?: Record<string, unknown>): void;
   debug(message: string, meta?: Record<string, unknown>): void;

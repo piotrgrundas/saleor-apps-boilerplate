@@ -14,7 +14,7 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
   },
   lint: {
-    jsPlugins: [{ name: "import-js", specifier: "./oxlint-plugins/eslint-import.mjs" }],
+    jsPlugins: [{ name: "import-js", specifier: "./tooling/oxlint/eslint-import.mjs" }],
     rules: {
       "no-unused-vars": "error",
       "import-js/order": [
@@ -31,7 +31,7 @@ export default defineConfig({
     ignorePatterns: [
       "node_modules/**",
       "dist/**",
-      "scripts/**",
+      "tooling/**",
       "**/*.generated.*",
       "**/generated.ts",
     ],
@@ -50,7 +50,7 @@ export default defineConfig({
     ignorePatterns: [
       "node_modules/**",
       "dist/**",
-      "scripts/**",
+      "tooling/**",
       "**/*.generated.*",
       "**/generated.ts",
     ],

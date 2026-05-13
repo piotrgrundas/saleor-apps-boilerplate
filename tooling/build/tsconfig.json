@@ -9,9 +9,9 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@/*": ["../src/*"]
+      "@/*": ["../../src/*"]
     },
-    "baseUrl": ".."
+    "baseUrl": "../.."
   },
   "include": ["*.ts"]
 }

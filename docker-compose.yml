@@ -14,7 +14,7 @@ services:
     volumes:
       - "./localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - ./etc/commands/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      - ./tooling/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 5s

@@ -72,7 +72,7 @@ cp .env.example .env
 docker compose up -d localstack
 
 # Initialize secrets in LocalStack
-./etc/commands/init-aws.sh
+./tooling/localstack/init-aws.sh
 
 # Start the dev server (with hot reload)
 pnpm dev
@@ -134,7 +134,7 @@ Build steps (`pnpm run build`):
 
 ### Server Build Externals
 
-Some packages are excluded from the server bundle because they use native bindings, dynamic `require()`, or are already provided by the runtime. These are defined in `scripts/build-utils.ts` as `SERVER_EXTERNALS`:
+Some packages are excluded from the server bundle because they use native bindings, dynamic `require()`, or are already provided by the runtime. These are defined in `tooling/build/build-utils.ts` as `SERVER_EXTERNALS`:
 
 | Package                           | Reason                         | Action                                             |
 | --------------------------------- | ------------------------------ | -------------------------------------------------- |

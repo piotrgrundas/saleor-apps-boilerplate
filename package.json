@@ -6,9 +6,9 @@
   "author": "Piotr Grundas <piotrgrundas@gmail.com>",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --raw \"tsx watch -r dotenv/config src/serve.ts\" \"tsx scripts/build-client.ts\"",
-    "build": "tsx scripts/build.ts",
-    "build:client": "tsx scripts/build-client.ts",
+    "dev": "concurrently --raw \"tsx watch -r dotenv/config src/serve.ts\" \"tsx tooling/build/build-client.ts\"",
+    "build": "tsx tooling/build/build.ts",
+    "build:client": "tsx tooling/build/build-client.ts",
     "test": "vp test",
     "test:watch": "vp test --watch",
     "check": "vp check",
@@ -52,7 +52,9 @@
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "commitizen": "^4.3.1",
     "concurrently": "^9.1.2",
+    "cz-customizable": "^7.5.4",
     "dotenv": "^17.4.2",
     "eslint-plugin-import": "^2.32.0",
     "tsdown": "^0.22.0",
@@ -61,7 +63,15 @@
     "vite-plus": "latest",
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
   },
-  "packageManager": "pnpm@10.33.0",
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    },
+    "cz-customizable": {
+      "config": ".cz-config.cjs"
+    }
+  },
+  "packageManager": "pnpm@11.1.1",
   "pnpm": {
     "overrides": {
       "vite": "npm:@voidzero-dev/vite-plus-core@latest",

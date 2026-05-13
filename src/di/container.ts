@@ -1,8 +1,8 @@
 import { createContainer } from "iti";
 
+import type { LogLevel } from "@/domain/ports/logger";
 import { createJoseAuthService } from "@/infrastructure/jose/auth/jose-auth-service";
 import { createJwksRepositoryFactory } from "@/infrastructure/jose/jwks/memory/jwks-memory-repository-factory";
-import type { LogLevel } from "@/infrastructure/logging/types";
 
 import { createAppConfig } from "./factories/app-config";
 import { createLogger } from "./factories/logging";
