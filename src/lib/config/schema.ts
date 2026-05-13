@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+import { LOG_LEVELS } from "@/domain/ports/logger";
+
 export const baseConfigSchema = z.object({
-  LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error"]).default("info"),
+  LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
   BASE_PATH: z.string().default(""),
 });
 

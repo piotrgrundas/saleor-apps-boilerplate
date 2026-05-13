@@ -1,3 +1,16 @@
+<div align="center" width="100px">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="docs/saleor-light.png">
+   <source media="(prefers-color-scheme: light)" srcset="docs/saleor-dark.png">
+   <img height="50" alt="saleor-commerce-logo" src="docs/saleor-dark.png">
+   <img height="50" alt="vite-plus-logo" src="docs/vite-plus.png">
+ </picture>
+</div>
+
+<div align="center">
+  <strong>Commerce that works with your language and stack</strong>
+</div>
+
 # Saleor App Boilerplate
 
 A production-ready Saleor App boilerplate built with **Vite+**, **Hono**, and **React 19**. Features clean architecture, multi-app support, type-safe error handling, and AWS-ready deployment.

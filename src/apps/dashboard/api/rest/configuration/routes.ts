@@ -1,7 +1,10 @@
 import { Hono } from "hono";
 
-import { appSettingsSchema, dashboardAppConfigSchema } from "@/apps/dashboard/app-config";
 import { container } from "@/apps/dashboard/di/container";
+import {
+  appSettingsSchema,
+  tenantAppConfigSchema,
+} from "@/infrastructure/integrations/saleor/app-config/settings";
 import { saleorDomainHeaderSchema } from "@/infrastructure/integrations/saleor/header/schema";
 import { BadRequestError, NotFoundError } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
@@ -23,7 +26,7 @@ export const configurationRoutes = new Hono()
       throw new NotFoundError(`No configuration found for domain: ${saleorDomain}`);
     }
 
-    const config = dashboardAppConfigSchema.parse(result.value);
+    const config = tenantAppConfigSchema.parse(result.value);
 
     return context.json({ data: config.settings });
   })
@@ -47,10 +50,7 @@ export const configurationRoutes = new Hono()
       }
 
       const updated = { ...getResult.value, settings };
-      const setResult = await appConfigRepository.set(
-        { saleorDomain, config: updated },
-        ctx,
-      );
+      const setResult = await appConfigRepository.set({ saleorDomain, config: updated }, ctx);
 
       if (setResult.isErr()) {
         throw new BadRequestError(setResult.error[0]?.message ?? "Config error");
