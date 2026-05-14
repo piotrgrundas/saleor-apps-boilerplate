@@ -6,13 +6,19 @@ export type GraphqlResolver<TResult, TParent, TContext, TArgs> = (
   context: TContext,
 ) => TResult | Promise<TResult>;
 
+export type GraphQLError = {
+  message: string;
+  path?: Array<string | number>;
+  extensions?: Record<string, unknown>;
+};
+
 export interface GraphQLResponse<T> {
   data?: T;
-  errors?: Array<{
-    message: string;
-    path?: Array<string | number>;
-    extensions?: Record<string, unknown>;
-  }>;
+  errors?: GraphQLError[];
 }
+
+export type AnyVariables = Record<string, unknown>;
+
+export type FetchOptions = Omit<RequestInit, "body" | "method" | "signal">;
 
 export type { TypedDocumentNode };
