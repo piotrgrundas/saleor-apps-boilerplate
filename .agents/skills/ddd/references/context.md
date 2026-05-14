@@ -15,15 +15,15 @@ Single mechanism for cross-cutting request-scoped data. Threaded as the last arg
 
 ## What goes in Context vs Deps
 
-| Category | Goes in | Reason |
-|---|---|---|
-| Other ports/adapters (storage, queue, repository) | `Deps` | Bound at construction; never varies per call |
-| Static config (region, bucket, timeout defaults) | `Deps` | Same lifetime as the consumer |
-| `logger` | `Context` | Per-request enrichment (`withContext({ requestId, path })`) |
-| `signal: AbortSignal` (future) | `Context` | Caller-initiated cancellation |
-| `deadline: Date` (future) | `Context` | Timeout cascade |
-| `tenantId` (future) | `Context` | Multi-tenant scoping per call |
-| `traceparent` (future) | `Context` | W3C trace context propagation |
+| Category                                          | Goes in   | Reason                                                      |
+| ------------------------------------------------- | --------- | ----------------------------------------------------------- |
+| Other ports/adapters (storage, queue, repository) | `Deps`    | Bound at construction; never varies per call                |
+| Static config (region, bucket, timeout defaults)  | `Deps`    | Same lifetime as the consumer                               |
+| `logger`                                          | `Context` | Per-request enrichment (`withContext({ requestId, path })`) |
+| `signal: AbortSignal` (future)                    | `Context` | Caller-initiated cancellation                               |
+| `deadline: Date` (future)                         | `Context` | Timeout cascade                                             |
+| `tenantId` (future)                               | `Context` | Multi-tenant scoping per call                               |
+| `traceparent` (future)                            | `Context` | W3C trace context propagation                               |
 
 Rule: if it varies per call → `Context`. If it's bound once for the consumer's lifetime → `Deps`.
 
@@ -35,7 +35,10 @@ Every fallible method takes `(input, ctx: Context)`:
 // src/domain/ports/app-config-repository.ts
 export type AppConfigRepository = {
   get(saleorDomain: string, ctx: Context): AsyncResult<SaleorAppConfig | null, AppConfigErrorCode>;
-  set(input: { saleorDomain: string; config: SaleorAppConfig }, ctx: Context): AsyncResult<void, AppConfigErrorCode>;
+  set(
+    input: { saleorDomain: string; config: SaleorAppConfig },
+    ctx: Context,
+  ): AsyncResult<void, AppConfigErrorCode>;
   delete(saleorDomain: string, ctx: Context): AsyncResult<void, AppConfigErrorCode>;
 };
 ```
@@ -106,7 +109,7 @@ async (context) => {
   const ctx = { logger: context.get("logger") };
   const result = await saleorInstall(input, ctx);
   // ...
-}
+};
 ```
 
 Mw populates `context.get("logger")` with `baseLogger.withTag(service).withContext({ requestId, path })` — that's the per-request enriched logger.
@@ -138,6 +141,7 @@ ALS appears attractive for "just make ctx ambient" but loses on:
 - **SoC**: infra reading ambient state means infra depends on a runtime concept (the ALS bound at HTTP mw) — leaky abstraction
 
 OpenTelemetry uses ALS internally for trace propagation. When you add OTel later, you can:
+
 - Let OTel manage trace context via its own ALS (you don't see it directly)
 - Or expose `traceparent` in `Context` and bridge OTel ↔ Context at the boundary
 

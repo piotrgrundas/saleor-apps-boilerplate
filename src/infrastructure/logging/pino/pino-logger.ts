@@ -17,7 +17,7 @@ const LEVEL_COLORS: Record<string, (s: string) => string> = {
 const TAG_COLOR = (s: string) => `\x1b[35m${s}\x1b[0m`;
 const TIME_COLOR = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
-const HIDDEN_PRETTY_KEYS = new Set([]);
+const HIDDEN_PRETTY_KEYS = new Set<string>();
 
 const prettyStream = () =>
   new Writable({

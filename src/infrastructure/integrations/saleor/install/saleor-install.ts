@@ -23,10 +23,7 @@ type Deps = {
 
 export const createSaleorInstall =
   ({ appConfigRepository, fetchAppId, jwksRepository }: Deps) =>
-  async (
-    input: SaleorInstallInput,
-    ctx: Context,
-  ): AsyncResult<void, SaleorInstallErrorCode> => {
+  async (input: SaleorInstallInput, ctx: Context): AsyncResult<void, SaleorInstallErrorCode> => {
     const { saleorDomain, saleorApiUrl, authToken, allowedDomains } = input;
 
     if (!isDomainAllowed(saleorDomain, allowedDomains)) {
@@ -78,10 +75,7 @@ export const createSaleorInstall =
       ]);
     }
 
-    const jwksResult = await jwksRepository.get(
-      { issuer: saleorApiUrl, forceRefresh: true },
-      ctx,
-    );
+    const jwksResult = await jwksRepository.get({ issuer: saleorApiUrl, forceRefresh: true }, ctx);
     if (jwksResult.isErr()) {
       ctx.logger.error("Failed to prefetch JWKS keys", {
         saleorDomain,

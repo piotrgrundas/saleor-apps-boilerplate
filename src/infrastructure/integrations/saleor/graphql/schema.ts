@@ -1,14 +1,5 @@
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = {
-  [_ in K]?: never;
-};
-export type Incremental<T> =
-  | T
-  | { [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string };
@@ -16,22 +7,22 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
-  Date: { input: any; output: any };
-  DateTime: { input: any; output: any };
-  Day: { input: any; output: any };
-  Decimal: { input: any; output: any };
-  GenericScalar: { input: any; output: any };
-  Hour: { input: any; output: any };
-  JSON: { input: any; output: any };
-  JSONString: { input: any; output: any };
-  Metadata: { input: any; output: any };
-  Minute: { input: any; output: any };
-  PositiveDecimal: { input: any; output: any };
-  PositiveInt: { input: any; output: any };
-  UUID: { input: any; output: any };
-  Upload: { input: any; output: any };
-  WeightScalar: { input: any; output: any };
-  _Any: { input: any; output: any };
+  Date: { input: unknown; output: unknown };
+  DateTime: { input: unknown; output: unknown };
+  Day: { input: unknown; output: unknown };
+  Decimal: { input: unknown; output: unknown };
+  GenericScalar: { input: unknown; output: unknown };
+  Hour: { input: unknown; output: unknown };
+  JSON: { input: unknown; output: unknown };
+  JSONString: { input: unknown; output: unknown };
+  Metadata: { input: unknown; output: unknown };
+  Minute: { input: unknown; output: unknown };
+  PositiveDecimal: { input: unknown; output: unknown };
+  PositiveInt: { input: unknown; output: unknown };
+  UUID: { input: unknown; output: unknown };
+  Upload: { input: unknown; output: unknown };
+  WeightScalar: { input: unknown; output: unknown };
+  _Any: { input: unknown; output: unknown };
 };
 
 /**
@@ -268,6 +259,7 @@ export type AccountErrorCode =
   | "DELETE_STAFF_ACCOUNT"
   | "DELETE_SUPERUSER_ACCOUNT"
   | "DUPLICATED_INPUT_ITEM"
+  | "FILE_SIZE_LIMIT_EXCEEDED"
   | "GRAPHQL_ERROR"
   | "INACTIVE"
   | "INVALID"
@@ -854,6 +846,14 @@ export type App = Node &
     privateMetafield?: Maybe<Scalars["String"]["output"]>;
     /** Private metadata. Requires staff permissions to access. Use `keys` to control which fields you want to include. The default is to include everything. */
     privateMetafields?: Maybe<Scalars["Metadata"]["output"]>;
+    /**
+     * List of problems associated with this app.
+     *
+     * Added in Saleor 3.22.
+     *
+     * Requires one of the following permissions: AUTHENTICATED_APP, MANAGE_APPS.
+     */
+    problems?: Maybe<Array<AppProblem>>;
     /** Support page for the app. */
     supportUrl?: Maybe<Scalars["String"]["output"]>;
     /**
@@ -892,6 +892,11 @@ export type AppPrivateMetafieldArgs = {
 /** Represents app data. */
 export type AppPrivateMetafieldsArgs = {
   keys?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+/** Represents app data. */
+export type AppProblemsArgs = {
+  limit?: InputMaybe<Scalars["PositiveInt"]["input"]>;
 };
 
 /**
@@ -1408,6 +1413,202 @@ export type AppManifestWebhook = {
   /** The url to receive the payload. */
   targetUrl: Scalars["String"]["output"];
 };
+
+/**
+ * Represents a problem associated with an app.
+ *
+ * Added in Saleor 3.22.
+ */
+export type AppProblem = Node & {
+  __typename?: "AppProblem";
+  /**
+   * Number of occurrences.
+   *
+   * Added in Saleor 3.22.
+   */
+  count: Scalars["Int"]["output"];
+  /**
+   * The date and time when the problem was created.
+   *
+   * Added in Saleor 3.22.
+   */
+  createdAt: Scalars["DateTime"]["output"];
+  /**
+   * Dismissal information. Null if the problem has not been dismissed.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: AUTHENTICATED_APP, MANAGE_APPS.
+   */
+  dismissed?: Maybe<AppProblemDismissed>;
+  /**
+   * The ID of the app problem.
+   *
+   * Added in Saleor 3.22.
+   */
+  id: Scalars["ID"]["output"];
+  /**
+   * Whether the problem has reached critical threshold.
+   *
+   * Added in Saleor 3.22.
+   */
+  isCritical: Scalars["Boolean"]["output"];
+  /**
+   * Key identifying the type of problem.
+   *
+   * Added in Saleor 3.22.
+   */
+  key: Scalars["String"]["output"];
+  /**
+   * The problem message.
+   *
+   * Added in Saleor 3.22.
+   */
+  message: Scalars["String"]["output"];
+  /**
+   * The date and time when the problem was last updated.
+   *
+   * Added in Saleor 3.22.
+   */
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+/**
+ * Add a problem to the calling app.
+ *
+ * Added in Saleor 3.22.
+ *
+ * Requires one of the following permissions: AUTHENTICATED_APP.
+ */
+export type AppProblemCreate = {
+  __typename?: "AppProblemCreate";
+  /** The created or updated app problem. */
+  appProblem?: Maybe<AppProblem>;
+  errors: Array<AppProblemCreateError>;
+};
+
+export type AppProblemCreateError = {
+  __typename?: "AppProblemCreateError";
+  /** The error code. */
+  code: AppProblemCreateErrorCode;
+  /** Name of a field that caused the error. A value of `null` indicates that the error isn't associated with a particular field. */
+  field?: Maybe<Scalars["String"]["output"]>;
+  /** The error message. */
+  message?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type AppProblemCreateErrorCode =
+  | "GRAPHQL_ERROR"
+  | "INVALID"
+  | "NOT_FOUND"
+  | "REQUIRED"
+  | "%future added value";
+
+export type AppProblemCreateInput = {
+  /** Time window in minutes for aggregating problems with the same key. Defaults to 60. If 0, a new problem is always created. */
+  aggregationPeriod?: InputMaybe<Scalars["Minute"]["input"]>;
+  /** If set, the problem becomes critical when count reaches this value. If sent again with higher value than already counted, problem can be de-escalated. */
+  criticalThreshold?: InputMaybe<Scalars["PositiveInt"]["input"]>;
+  /** Key identifying the type of problem. App can add multiple problems under the same key, to merge them together or delete them in batch. Must be between 3 and 128 characters. */
+  key: Scalars["String"]["input"];
+  /** The problem message to display. Must be at least 3 characters. Messages longer than 2048 characters will be truncated to 2048 characters with '...' suffix. */
+  message: Scalars["String"]["input"];
+};
+
+/**
+ * Dismiss problems for an app.
+ *
+ * Added in Saleor 3.22.
+ *
+ * Requires one of the following permissions: MANAGE_APPS, AUTHENTICATED_APP.
+ */
+export type AppProblemDismiss = {
+  __typename?: "AppProblemDismiss";
+  errors: Array<AppProblemDismissError>;
+};
+
+/** Input for app callers to dismiss their own problems. */
+export type AppProblemDismissByAppInput = {
+  /** List of problem IDs to dismiss. Cannot be combined with keys. Max 100. */
+  ids?: InputMaybe<Array<Scalars["ID"]["input"]>>;
+  /** List of problem keys to dismiss. Cannot be combined with ids. Max 100. */
+  keys?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+/** Input for staff callers to dismiss problems by IDs. */
+export type AppProblemDismissByStaffWithIdsInput = {
+  /** List of problem IDs to dismiss. Max 100. */
+  ids: Array<Scalars["ID"]["input"]>;
+};
+
+/** Input for staff callers to dismiss problems by keys. */
+export type AppProblemDismissByStaffWithKeysInput = {
+  /** ID of the app whose problems to dismiss. */
+  app: Scalars["ID"]["input"];
+  /** List of problem keys to dismiss. Max 100. */
+  keys: Array<Scalars["String"]["input"]>;
+};
+
+export type AppProblemDismissError = {
+  __typename?: "AppProblemDismissError";
+  /** The error code. */
+  code: AppProblemDismissErrorCode;
+  /** Name of a field that caused the error. A value of `null` indicates that the error isn't associated with a particular field. */
+  field?: Maybe<Scalars["String"]["output"]>;
+  /** The error message. */
+  message?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type AppProblemDismissErrorCode =
+  | "GRAPHQL_ERROR"
+  | "INVALID"
+  | "NOT_FOUND"
+  | "OUT_OF_SCOPE_APP"
+  | "REQUIRED"
+  | "%future added value";
+
+/** Input for dismissing app problems. Only one can be specified. */
+export type AppProblemDismissInput = {
+  /** For app callers only - dismiss own problems. */
+  byApp?: InputMaybe<AppProblemDismissByAppInput>;
+  /** For staff callers - dismiss problems by IDs. */
+  byStaffWithIds?: InputMaybe<AppProblemDismissByStaffWithIdsInput>;
+  /** For staff callers - dismiss problems by keys for specified app. */
+  byStaffWithKeys?: InputMaybe<AppProblemDismissByStaffWithKeysInput>;
+};
+
+/**
+ * Dismissal information for an app problem.
+ *
+ * Added in Saleor 3.22.
+ */
+export type AppProblemDismissed = {
+  __typename?: "AppProblemDismissed";
+  /**
+   * Whether the problem was dismissed by an App or a User.
+   *
+   * Added in Saleor 3.22.
+   */
+  by: AppProblemDismissedByEnum;
+  /**
+   * The user who dismissed this problem. Null if dismissed by an app or the user was deleted.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: MANAGE_STAFF.
+   */
+  user?: Maybe<User>;
+  /**
+   * Email of the user who dismissed this problem. Preserved even if the user is deleted.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: AUTHENTICATED_STAFF_USER.
+   */
+  userEmail?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type AppProblemDismissedByEnum = "APP" | "USER" | "%future added value";
 
 /**
  * Re-enable sync webhooks for provided app. Can be used to manually re-enable sync webhooks for the app before the cooldown period ends.
@@ -5662,6 +5863,7 @@ export type CollectionError = {
 export type CollectionErrorCode =
   | "CANNOT_MANAGE_PRODUCT_WITHOUT_VARIANT"
   | "DUPLICATED_INPUT_ITEM"
+  | "FILE_SIZE_LIMIT_EXCEEDED"
   | "GRAPHQL_ERROR"
   | "INVALID"
   | "NOT_FOUND"
@@ -6027,256 +6229,507 @@ export type ContainsFilterInput = {
  * The `EU` value is DEPRECATED and will be removed in Saleor 3.21.
  */
 export type CountryCode =
+  /** Andorra */
   | "AD"
+  /** United Arab Emirates */
   | "AE"
+  /** Afghanistan */
   | "AF"
+  /** Antigua and Barbuda */
   | "AG"
+  /** Anguilla */
   | "AI"
+  /** Albania */
   | "AL"
+  /** Armenia */
   | "AM"
+  /** Angola */
   | "AO"
+  /** Antarctica */
   | "AQ"
+  /** Argentina */
   | "AR"
+  /** American Samoa */
   | "AS"
+  /** Austria */
   | "AT"
+  /** Australia */
   | "AU"
+  /** Aruba */
   | "AW"
+  /** Åland Islands */
   | "AX"
+  /** Azerbaijan */
   | "AZ"
+  /** Bosnia and Herzegovina */
   | "BA"
+  /** Barbados */
   | "BB"
+  /** Bangladesh */
   | "BD"
+  /** Belgium */
   | "BE"
+  /** Burkina Faso */
   | "BF"
+  /** Bulgaria */
   | "BG"
+  /** Bahrain */
   | "BH"
+  /** Burundi */
   | "BI"
+  /** Benin */
   | "BJ"
+  /** Saint Barthélemy */
   | "BL"
+  /** Bermuda */
   | "BM"
+  /** Brunei */
   | "BN"
+  /** Bolivia */
   | "BO"
+  /** Bonaire, Sint Eustatius and Saba */
   | "BQ"
+  /** Brazil */
   | "BR"
+  /** Bahamas */
   | "BS"
+  /** Bhutan */
   | "BT"
+  /** Bouvet Island */
   | "BV"
+  /** Botswana */
   | "BW"
+  /** Belarus */
   | "BY"
+  /** Belize */
   | "BZ"
+  /** Canada */
   | "CA"
+  /** Cocos (Keeling) Islands */
   | "CC"
+  /** Congo (the Democratic Republic of the) */
   | "CD"
+  /** Central African Republic */
   | "CF"
+  /** Congo */
   | "CG"
+  /** Switzerland */
   | "CH"
+  /** Côte d'Ivoire */
   | "CI"
+  /** Cook Islands */
   | "CK"
+  /** Chile */
   | "CL"
+  /** Cameroon */
   | "CM"
+  /** China */
   | "CN"
+  /** Colombia */
   | "CO"
+  /** Costa Rica */
   | "CR"
+  /** Cuba */
   | "CU"
+  /** Cabo Verde */
   | "CV"
+  /** Curaçao */
   | "CW"
+  /** Christmas Island */
   | "CX"
+  /** Cyprus */
   | "CY"
+  /** Czechia */
   | "CZ"
+  /** Germany */
   | "DE"
+  /** Djibouti */
   | "DJ"
+  /** Denmark */
   | "DK"
+  /** Dominica */
   | "DM"
+  /** Dominican Republic */
   | "DO"
+  /** Algeria */
   | "DZ"
+  /** Ecuador */
   | "EC"
+  /** Estonia */
   | "EE"
+  /** Egypt */
   | "EG"
+  /** Western Sahara */
   | "EH"
+  /** Eritrea */
   | "ER"
+  /** Spain */
   | "ES"
+  /** Ethiopia */
   | "ET"
+  /** European Union */
   | "EU"
+  /** Finland */
   | "FI"
+  /** Fiji */
   | "FJ"
+  /** Falkland Islands (Malvinas) */
   | "FK"
+  /** Micronesia */
   | "FM"
+  /** Faroe Islands */
   | "FO"
+  /** France */
   | "FR"
+  /** Gabon */
   | "GA"
+  /** United Kingdom */
   | "GB"
+  /** Grenada */
   | "GD"
+  /** Georgia */
   | "GE"
+  /** French Guiana */
   | "GF"
+  /** Guernsey */
   | "GG"
+  /** Ghana */
   | "GH"
+  /** Gibraltar */
   | "GI"
+  /** Greenland */
   | "GL"
+  /** Gambia */
   | "GM"
+  /** Guinea */
   | "GN"
+  /** Guadeloupe */
   | "GP"
+  /** Equatorial Guinea */
   | "GQ"
+  /** Greece */
   | "GR"
+  /** South Georgia and the South Sandwich Islands */
   | "GS"
+  /** Guatemala */
   | "GT"
+  /** Guam */
   | "GU"
+  /** Guinea-Bissau */
   | "GW"
+  /** Guyana */
   | "GY"
+  /** Hong Kong */
   | "HK"
+  /** Heard Island and McDonald Islands */
   | "HM"
+  /** Honduras */
   | "HN"
+  /** Croatia */
   | "HR"
+  /** Haiti */
   | "HT"
+  /** Hungary */
   | "HU"
+  /** Indonesia */
   | "ID"
+  /** Ireland */
   | "IE"
+  /** Israel */
   | "IL"
+  /** Isle of Man */
   | "IM"
+  /** India */
   | "IN"
+  /** British Indian Ocean Territory */
   | "IO"
+  /** Iraq */
   | "IQ"
+  /** Iran */
   | "IR"
+  /** Iceland */
   | "IS"
+  /** Italy */
   | "IT"
+  /** Jersey */
   | "JE"
+  /** Jamaica */
   | "JM"
+  /** Jordan */
   | "JO"
+  /** Japan */
   | "JP"
+  /** Kenya */
   | "KE"
+  /** Kyrgyzstan */
   | "KG"
+  /** Cambodia */
   | "KH"
+  /** Kiribati */
   | "KI"
+  /** Comoros */
   | "KM"
+  /** Saint Kitts and Nevis */
   | "KN"
+  /** North Korea */
   | "KP"
+  /** South Korea */
   | "KR"
+  /** Kuwait */
   | "KW"
+  /** Cayman Islands */
   | "KY"
+  /** Kazakhstan */
   | "KZ"
+  /** Laos */
   | "LA"
+  /** Lebanon */
   | "LB"
+  /** Saint Lucia */
   | "LC"
+  /** Liechtenstein */
   | "LI"
+  /** Sri Lanka */
   | "LK"
+  /** Liberia */
   | "LR"
+  /** Lesotho */
   | "LS"
+  /** Lithuania */
   | "LT"
+  /** Luxembourg */
   | "LU"
+  /** Latvia */
   | "LV"
+  /** Libya */
   | "LY"
+  /** Morocco */
   | "MA"
+  /** Monaco */
   | "MC"
+  /** Moldova */
   | "MD"
+  /** Montenegro */
   | "ME"
+  /** Saint Martin (French part) */
   | "MF"
+  /** Madagascar */
   | "MG"
+  /** Marshall Islands */
   | "MH"
+  /** North Macedonia */
   | "MK"
+  /** Mali */
   | "ML"
+  /** Myanmar */
   | "MM"
+  /** Mongolia */
   | "MN"
+  /** Macao */
   | "MO"
+  /** Northern Mariana Islands */
   | "MP"
+  /** Martinique */
   | "MQ"
+  /** Mauritania */
   | "MR"
+  /** Montserrat */
   | "MS"
+  /** Malta */
   | "MT"
+  /** Mauritius */
   | "MU"
+  /** Maldives */
   | "MV"
+  /** Malawi */
   | "MW"
+  /** Mexico */
   | "MX"
+  /** Malaysia */
   | "MY"
+  /** Mozambique */
   | "MZ"
+  /** Namibia */
   | "NA"
+  /** New Caledonia */
   | "NC"
+  /** Niger */
   | "NE"
+  /** Norfolk Island */
   | "NF"
+  /** Nigeria */
   | "NG"
+  /** Nicaragua */
   | "NI"
+  /** Netherlands */
   | "NL"
+  /** Norway */
   | "NO"
+  /** Nepal */
   | "NP"
+  /** Nauru */
   | "NR"
+  /** Niue */
   | "NU"
+  /** New Zealand */
   | "NZ"
+  /** Oman */
   | "OM"
+  /** Panama */
   | "PA"
+  /** Peru */
   | "PE"
+  /** French Polynesia */
   | "PF"
+  /** Papua New Guinea */
   | "PG"
+  /** Philippines */
   | "PH"
+  /** Pakistan */
   | "PK"
+  /** Poland */
   | "PL"
+  /** Saint Pierre and Miquelon */
   | "PM"
+  /** Pitcairn */
   | "PN"
+  /** Puerto Rico */
   | "PR"
+  /** Palestine, State of */
   | "PS"
+  /** Portugal */
   | "PT"
+  /** Palau */
   | "PW"
+  /** Paraguay */
   | "PY"
+  /** Qatar */
   | "QA"
+  /** Réunion */
   | "RE"
+  /** Romania */
   | "RO"
+  /** Serbia */
   | "RS"
+  /** Russia */
   | "RU"
+  /** Rwanda */
   | "RW"
+  /** Saudi Arabia */
   | "SA"
+  /** Solomon Islands */
   | "SB"
+  /** Seychelles */
   | "SC"
+  /** Sudan */
   | "SD"
+  /** Sweden */
   | "SE"
+  /** Singapore */
   | "SG"
+  /** Saint Helena, Ascension and Tristan da Cunha */
   | "SH"
+  /** Slovenia */
   | "SI"
+  /** Svalbard and Jan Mayen */
   | "SJ"
+  /** Slovakia */
   | "SK"
+  /** Sierra Leone */
   | "SL"
+  /** San Marino */
   | "SM"
+  /** Senegal */
   | "SN"
+  /** Somalia */
   | "SO"
+  /** Suriname */
   | "SR"
+  /** South Sudan */
   | "SS"
+  /** Sao Tome and Principe */
   | "ST"
+  /** El Salvador */
   | "SV"
+  /** Sint Maarten (Dutch part) */
   | "SX"
+  /** Syria */
   | "SY"
+  /** Eswatini */
   | "SZ"
+  /** Turks and Caicos Islands */
   | "TC"
+  /** Chad */
   | "TD"
+  /** French Southern Territories */
   | "TF"
+  /** Togo */
   | "TG"
+  /** Thailand */
   | "TH"
+  /** Tajikistan */
   | "TJ"
+  /** Tokelau */
   | "TK"
+  /** Timor-Leste */
   | "TL"
+  /** Turkmenistan */
   | "TM"
+  /** Tunisia */
   | "TN"
+  /** Tonga */
   | "TO"
+  /** Türkiye */
   | "TR"
+  /** Trinidad and Tobago */
   | "TT"
+  /** Tuvalu */
   | "TV"
+  /** Taiwan */
   | "TW"
+  /** Tanzania */
   | "TZ"
+  /** Ukraine */
   | "UA"
+  /** Uganda */
   | "UG"
+  /** United States Minor Outlying Islands */
   | "UM"
+  /** United States of America */
   | "US"
+  /** Uruguay */
   | "UY"
+  /** Uzbekistan */
   | "UZ"
+  /** Holy See */
   | "VA"
+  /** Saint Vincent and the Grenadines */
   | "VC"
+  /** Venezuela */
   | "VE"
+  /** Virgin Islands (British) */
   | "VG"
+  /** Virgin Islands (U.S.) */
   | "VI"
+  /** Vietnam */
   | "VN"
+  /** Vanuatu */
   | "VU"
+  /** Wallis and Futuna */
   | "WF"
+  /** Samoa */
   | "WS"
+  /** Kosovo */
   | "XK"
+  /** Yemen */
   | "YE"
+  /** Mayotte */
   | "YT"
+  /** South Africa */
   | "ZA"
+  /** Zambia */
   | "ZM"
+  /** Zimbabwe */
   | "ZW"
   | "%future added value";
 
@@ -6575,6 +7028,62 @@ export type CustomerMetadataUpdated = Event & {
   user?: Maybe<User>;
   /** Saleor version that triggered the event. */
   version?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type CustomerOrderWhereInput = {
+  /** List of conditions that must be met. */
+  AND?: InputMaybe<Array<CustomerOrderWhereInput>>;
+  /** A list of conditions of which at least one must be met. */
+  OR?: InputMaybe<Array<CustomerOrderWhereInput>>;
+  /** Filter by authorize status. */
+  authorizeStatus?: InputMaybe<OrderAuthorizeStatusEnumFilterInput>;
+  /** Filter by billing address of the order. */
+  billingAddress?: InputMaybe<AddressFilterInput>;
+  /** Filter by channel. */
+  channelId?: InputMaybe<GlobalIdFilterInput>;
+  /** Filter by charge status. */
+  chargeStatus?: InputMaybe<OrderChargeStatusEnumFilterInput>;
+  /** Filter by checkout id. */
+  checkoutId?: InputMaybe<GlobalIdFilterInput>;
+  /** Filter by checkout token. */
+  checkoutToken?: InputMaybe<UuidFilterInput>;
+  /** Filter order by created at date. */
+  createdAt?: InputMaybe<DateTimeRangeInput>;
+  /** Filter by whether the order has any fulfillments. */
+  hasFulfillments?: InputMaybe<Scalars["Boolean"]["input"]>;
+  /** Filter by whether the order has any invoices. */
+  hasInvoices?: InputMaybe<Scalars["Boolean"]["input"]>;
+  ids?: InputMaybe<Array<Scalars["ID"]["input"]>>;
+  /** Filter by invoice data associated with the order. Each list item represents conditions that must be satisfied by a single object. The filter matches orders that have related objects meeting all specified groups of conditions. */
+  invoices?: InputMaybe<Array<InvoiceFilterInput>>;
+  /** Filter by whether the order uses the click and collect delivery method. */
+  isClickAndCollect?: InputMaybe<Scalars["Boolean"]["input"]>;
+  /** Filter based on whether the order includes a gift card purchase. */
+  isGiftCardBought?: InputMaybe<Scalars["Boolean"]["input"]>;
+  /** Filter based on whether a gift card was used in the order. */
+  isGiftCardUsed?: InputMaybe<Scalars["Boolean"]["input"]>;
+  /** Filter by number of lines in the order. */
+  linesCount?: InputMaybe<IntFilterInput>;
+  /** Filter by metadata fields. */
+  metadata?: InputMaybe<MetadataFilterInput>;
+  /** Filter by order number. */
+  number?: InputMaybe<IntFilterInput>;
+  /** Filter by the product type of related order lines. */
+  productTypeId?: InputMaybe<GlobalIdFilterInput>;
+  /** Filter by shipping address of the order. */
+  shippingAddress?: InputMaybe<AddressFilterInput>;
+  /** Filter by order status. */
+  status?: InputMaybe<OrderStatusEnumFilterInput>;
+  /** Filter by total gross amount of the order. */
+  totalGross?: InputMaybe<PriceFilterInput>;
+  /** Filter by total net amount of the order. */
+  totalNet?: InputMaybe<PriceFilterInput>;
+  /** Filter order by updated at date. */
+  updatedAt?: InputMaybe<DateTimeRangeInput>;
+  /** Filter by user email. */
+  userEmail?: InputMaybe<StringFilterInput>;
+  /** Filter by voucher code used in the order. */
+  voucherCode?: InputMaybe<StringFilterInput>;
 };
 
 /**
@@ -8136,9 +8645,9 @@ export type GiftCard = Node &
      */
     endDate?: Maybe<Scalars["DateTime"]["output"]>;
     /**
-     * List of events associated with the gift card.
+     * List of events associated with the gift card. Requires MANAGE_GIFT_CARD permission to access all events. Users with MANAGE_ORDERS permission can access only USED_IN_ORDER events.
      *
-     * Requires one of the following permissions: MANAGE_GIFT_CARD.
+     * Requires one of the following permissions: MANAGE_GIFT_CARD, MANAGE_ORDERS.
      */
     events: Array<GiftCardEvent>;
     /** Expiry date of the gift card. */
@@ -9195,785 +9704,1565 @@ export type Job = {
 
 export type JobStatusEnum = "DELETED" | "FAILED" | "PENDING" | "SUCCESS" | "%future added value";
 
+/** Language code enum. It contains all the languages supported by Saleor. */
 export type LanguageCodeEnum =
+  /** Afrikaans */
   | "AF"
+  /** Afrikaans (Namibia) */
   | "AF_NA"
+  /** Afrikaans (South Africa) */
   | "AF_ZA"
+  /** Aghem */
   | "AGQ"
+  /** Aghem (Cameroon) */
   | "AGQ_CM"
+  /** Akan */
   | "AK"
+  /** Akan (Ghana) */
   | "AK_GH"
+  /** Amharic */
   | "AM"
+  /** Amharic (Ethiopia) */
   | "AM_ET"
+  /** Arabic */
   | "AR"
+  /** Arabic (United Arab Emirates) */
   | "AR_AE"
+  /** Arabic (Bahrain) */
   | "AR_BH"
+  /** Arabic (Djibouti) */
   | "AR_DJ"
+  /** Arabic (Algeria) */
   | "AR_DZ"
+  /** Arabic (Egypt) */
   | "AR_EG"
+  /** Arabic (Western Sahara) */
   | "AR_EH"
+  /** Arabic (Eritrea) */
   | "AR_ER"
+  /** Arabic (Israel) */
   | "AR_IL"
+  /** Arabic (Iraq) */
   | "AR_IQ"
+  /** Arabic (Jordan) */
   | "AR_JO"
+  /** Arabic (Comoros) */
   | "AR_KM"
+  /** Arabic (Kuwait) */
   | "AR_KW"
+  /** Arabic (Lebanon) */
   | "AR_LB"
+  /** Arabic (Libya) */
   | "AR_LY"
+  /** Arabic (Morocco) */
   | "AR_MA"
+  /** Arabic (Mauritania) */
   | "AR_MR"
+  /** Arabic (Oman) */
   | "AR_OM"
+  /** Arabic (Palestinian Territories) */
   | "AR_PS"
+  /** Arabic (Qatar) */
   | "AR_QA"
+  /** Arabic (Saudi Arabia) */
   | "AR_SA"
+  /** Arabic (Sudan) */
   | "AR_SD"
+  /** Arabic (Somalia) */
   | "AR_SO"
+  /** Arabic (South Sudan) */
   | "AR_SS"
+  /** Arabic (Syria) */
   | "AR_SY"
+  /** Arabic (Chad) */
   | "AR_TD"
+  /** Arabic (Tunisia) */
   | "AR_TN"
+  /** Arabic (Yemen) */
   | "AR_YE"
+  /** Assamese */
   | "AS"
+  /** Asu */
   | "ASA"
+  /** Asu (Tanzania) */
   | "ASA_TZ"
+  /** Asturian */
   | "AST"
+  /** Asturian (Spain) */
   | "AST_ES"
+  /** Assamese (India) */
   | "AS_IN"
+  /** Azerbaijani */
   | "AZ"
+  /** Azerbaijani (Cyrillic) */
   | "AZ_CYRL"
+  /** Azerbaijani (Cyrillic, Azerbaijan) */
   | "AZ_CYRL_AZ"
+  /** Azerbaijani (Latin) */
   | "AZ_LATN"
+  /** Azerbaijani (Latin, Azerbaijan) */
   | "AZ_LATN_AZ"
+  /** Basaa */
   | "BAS"
+  /** Basaa (Cameroon) */
   | "BAS_CM"
+  /** Belarusian */
   | "BE"
+  /** Bemba */
   | "BEM"
+  /** Bemba (Zambia) */
   | "BEM_ZM"
+  /** Bena */
   | "BEZ"
+  /** Bena (Tanzania) */
   | "BEZ_TZ"
+  /** Belarusian (Belarus) */
   | "BE_BY"
+  /** Bulgarian */
   | "BG"
+  /** Bulgarian (Bulgaria) */
   | "BG_BG"
+  /** Bambara */
   | "BM"
+  /** Bambara (Mali) */
   | "BM_ML"
+  /** Bangla */
   | "BN"
+  /** Bangla (Bangladesh) */
   | "BN_BD"
+  /** Bangla (India) */
   | "BN_IN"
+  /** Tibetan */
   | "BO"
+  /** Tibetan (China) */
   | "BO_CN"
+  /** Tibetan (India) */
   | "BO_IN"
+  /** Breton */
   | "BR"
+  /** Bodo */
   | "BRX"
+  /** Bodo (India) */
   | "BRX_IN"
+  /** Breton (France) */
   | "BR_FR"
+  /** Bosnian */
   | "BS"
+  /** Bosnian (Cyrillic) */
   | "BS_CYRL"
+  /** Bosnian (Cyrillic, Bosnia & Herzegovina) */
   | "BS_CYRL_BA"
+  /** Bosnian (Latin) */
   | "BS_LATN"
+  /** Bosnian (Latin, Bosnia & Herzegovina) */
   | "BS_LATN_BA"
+  /** Catalan */
   | "CA"
+  /** Catalan (Andorra) */
   | "CA_AD"
+  /** Catalan (Spain) */
   | "CA_ES"
+  /** Catalan (Spain, Valencian) */
   | "CA_ES_VALENCIA"
+  /** Catalan (France) */
   | "CA_FR"
+  /** Catalan (Italy) */
   | "CA_IT"
+  /** Chakma */
   | "CCP"
+  /** Chakma (Bangladesh) */
   | "CCP_BD"
+  /** Chakma (India) */
   | "CCP_IN"
+  /** Chechen */
   | "CE"
+  /** Cebuano */
   | "CEB"
+  /** Cebuano (Philippines) */
   | "CEB_PH"
+  /** Chechen (Russia) */
   | "CE_RU"
+  /** Chiga */
   | "CGG"
+  /** Chiga (Uganda) */
   | "CGG_UG"
+  /** Cherokee */
   | "CHR"
+  /** Cherokee (United States) */
   | "CHR_US"
+  /** Central Kurdish */
   | "CKB"
+  /** Central Kurdish (Iraq) */
   | "CKB_IQ"
+  /** Central Kurdish (Iran) */
   | "CKB_IR"
+  /** Czech */
   | "CS"
+  /** Czech (Czechia) */
   | "CS_CZ"
+  /** Church Slavic */
   | "CU"
+  /** Church Slavic (Russia) */
   | "CU_RU"
+  /** Welsh */
   | "CY"
+  /** Welsh (United Kingdom) */
   | "CY_GB"
+  /** Danish */
   | "DA"
+  /** Taita */
   | "DAV"
+  /** Taita (Kenya) */
   | "DAV_KE"
+  /** Danish (Denmark) */
   | "DA_DK"
+  /** Danish (Greenland) */
   | "DA_GL"
+  /** German */
   | "DE"
+  /** German (Austria) */
   | "DE_AT"
+  /** German (Belgium) */
   | "DE_BE"
+  /** German (Switzerland) */
   | "DE_CH"
+  /** German (Germany) */
   | "DE_DE"
+  /** German (Italy) */
   | "DE_IT"
+  /** German (Liechtenstein) */
   | "DE_LI"
+  /** German (Luxembourg) */
   | "DE_LU"
+  /** Zarma */
   | "DJE"
+  /** Zarma (Niger) */
   | "DJE_NE"
+  /** Lower Sorbian */
   | "DSB"
+  /** Lower Sorbian (Germany) */
   | "DSB_DE"
+  /** Duala */
   | "DUA"
+  /** Duala (Cameroon) */
   | "DUA_CM"
+  /** Jola-Fonyi */
   | "DYO"
+  /** Jola-Fonyi (Senegal) */
   | "DYO_SN"
+  /** Dzongkha */
   | "DZ"
+  /** Dzongkha (Bhutan) */
   | "DZ_BT"
+  /** Embu */
   | "EBU"
+  /** Embu (Kenya) */
   | "EBU_KE"
+  /** Ewe */
   | "EE"
+  /** Ewe (Ghana) */
   | "EE_GH"
+  /** Ewe (Togo) */
   | "EE_TG"
+  /** Greek */
   | "EL"
+  /** Greek (Cyprus) */
   | "EL_CY"
+  /** Greek (Greece) */
   | "EL_GR"
+  /** English */
   | "EN"
+  /** English (United Arab Emirates) */
   | "EN_AE"
+  /** English (Antigua & Barbuda) */
   | "EN_AG"
+  /** English (Anguilla) */
   | "EN_AI"
+  /** English (American Samoa) */
   | "EN_AS"
+  /** English (Austria) */
   | "EN_AT"
+  /** English (Australia) */
   | "EN_AU"
+  /** English (Barbados) */
   | "EN_BB"
+  /** English (Belgium) */
   | "EN_BE"
+  /** English (Burundi) */
   | "EN_BI"
+  /** English (Bermuda) */
   | "EN_BM"
+  /** English (Bahamas) */
   | "EN_BS"
+  /** English (Botswana) */
   | "EN_BW"
+  /** English (Belize) */
   | "EN_BZ"
+  /** English (Canada) */
   | "EN_CA"
+  /** English (Cocos (Keeling) Islands) */
   | "EN_CC"
+  /** English (Switzerland) */
   | "EN_CH"
+  /** English (Cook Islands) */
   | "EN_CK"
+  /** English (Cameroon) */
   | "EN_CM"
+  /** English (Christmas Island) */
   | "EN_CX"
+  /** English (Cyprus) */
   | "EN_CY"
+  /** English (Germany) */
   | "EN_DE"
+  /** English (Diego Garcia) */
   | "EN_DG"
+  /** English (Denmark) */
   | "EN_DK"
+  /** English (Dominica) */
   | "EN_DM"
+  /** English (Eritrea) */
   | "EN_ER"
+  /** English (Finland) */
   | "EN_FI"
+  /** English (Fiji) */
   | "EN_FJ"
+  /** English (Falkland Islands) */
   | "EN_FK"
+  /** English (Micronesia) */
   | "EN_FM"
+  /** English (United Kingdom) */
   | "EN_GB"
+  /** English (Grenada) */
   | "EN_GD"
+  /** English (Guernsey) */
   | "EN_GG"
+  /** English (Ghana) */
   | "EN_GH"
+  /** English (Gibraltar) */
   | "EN_GI"
+  /** English (Gambia) */
   | "EN_GM"
+  /** English (Guam) */
   | "EN_GU"
+  /** English (Guyana) */
   | "EN_GY"
+  /** English (Hong Kong SAR China) */
   | "EN_HK"
+  /** English (Ireland) */
   | "EN_IE"
+  /** English (Israel) */
   | "EN_IL"
+  /** English (Isle of Man) */
   | "EN_IM"
+  /** English (India) */
   | "EN_IN"
+  /** English (British Indian Ocean Territory) */
   | "EN_IO"
+  /** English (Jersey) */
   | "EN_JE"
+  /** English (Jamaica) */
   | "EN_JM"
+  /** English (Kenya) */
   | "EN_KE"
+  /** English (Kiribati) */
   | "EN_KI"
+  /** English (St. Kitts & Nevis) */
   | "EN_KN"
+  /** English (Cayman Islands) */
   | "EN_KY"
+  /** English (St. Lucia) */
   | "EN_LC"
+  /** English (Liberia) */
   | "EN_LR"
+  /** English (Lesotho) */
   | "EN_LS"
+  /** English (Madagascar) */
   | "EN_MG"
+  /** English (Marshall Islands) */
   | "EN_MH"
+  /** English (Macao SAR China) */
   | "EN_MO"
+  /** English (Northern Mariana Islands) */
   | "EN_MP"
+  /** English (Montserrat) */
   | "EN_MS"
+  /** English (Malta) */
   | "EN_MT"
+  /** English (Mauritius) */
   | "EN_MU"
+  /** English (Malawi) */
   | "EN_MW"
+  /** English (Malaysia) */
   | "EN_MY"
+  /** English (Namibia) */
   | "EN_NA"
+  /** English (Norfolk Island) */
   | "EN_NF"
+  /** English (Nigeria) */
   | "EN_NG"
+  /** English (Netherlands) */
   | "EN_NL"
+  /** English (Nauru) */
   | "EN_NR"
+  /** English (Niue) */
   | "EN_NU"
+  /** English (New Zealand) */
   | "EN_NZ"
+  /** English (Papua New Guinea) */
   | "EN_PG"
+  /** English (Philippines) */
   | "EN_PH"
+  /** English (Pakistan) */
   | "EN_PK"
+  /** English (Pitcairn Islands) */
   | "EN_PN"
+  /** English (Puerto Rico) */
   | "EN_PR"
+  /** English (Palau) */
   | "EN_PW"
+  /** English (Rwanda) */
   | "EN_RW"
+  /** English (Solomon Islands) */
   | "EN_SB"
+  /** English (Seychelles) */
   | "EN_SC"
+  /** English (Sudan) */
   | "EN_SD"
+  /** English (Sweden) */
   | "EN_SE"
+  /** English (Singapore) */
   | "EN_SG"
+  /** English (St. Helena) */
   | "EN_SH"
+  /** English (Slovenia) */
   | "EN_SI"
+  /** English (Sierra Leone) */
   | "EN_SL"
+  /** English (South Sudan) */
   | "EN_SS"
+  /** English (Sint Maarten) */
   | "EN_SX"
+  /** English (Eswatini) */
   | "EN_SZ"
+  /** English (Turks & Caicos Islands) */
   | "EN_TC"
+  /** English (Tokelau) */
   | "EN_TK"
+  /** English (Tonga) */
   | "EN_TO"
+  /** English (Trinidad & Tobago) */
   | "EN_TT"
+  /** English (Tuvalu) */
   | "EN_TV"
+  /** English (Tanzania) */
   | "EN_TZ"
+  /** English (Uganda) */
   | "EN_UG"
+  /** English (U.S. Outlying Islands) */
   | "EN_UM"
+  /** English (United States) */
   | "EN_US"
+  /** English (St. Vincent & Grenadines) */
   | "EN_VC"
+  /** English (British Virgin Islands) */
   | "EN_VG"
+  /** English (U.S. Virgin Islands) */
   | "EN_VI"
+  /** English (Vanuatu) */
   | "EN_VU"
+  /** English (Samoa) */
   | "EN_WS"
+  /** English (South Africa) */
   | "EN_ZA"
+  /** English (Zambia) */
   | "EN_ZM"
+  /** English (Zimbabwe) */
   | "EN_ZW"
+  /** Esperanto */
   | "EO"
+  /** Spanish */
   | "ES"
+  /** Spanish (Argentina) */
   | "ES_AR"
+  /** Spanish (Bolivia) */
   | "ES_BO"
+  /** Spanish (Brazil) */
   | "ES_BR"
+  /** Spanish (Belize) */
   | "ES_BZ"
+  /** Spanish (Chile) */
   | "ES_CL"
+  /** Spanish (Colombia) */
   | "ES_CO"
+  /** Spanish (Costa Rica) */
   | "ES_CR"
+  /** Spanish (Cuba) */
   | "ES_CU"
+  /** Spanish (Dominican Republic) */
   | "ES_DO"
+  /** Spanish (Ceuta & Melilla) */
   | "ES_EA"
+  /** Spanish (Ecuador) */
   | "ES_EC"
+  /** Spanish (Spain) */
   | "ES_ES"
+  /** Spanish (Equatorial Guinea) */
   | "ES_GQ"
+  /** Spanish (Guatemala) */
   | "ES_GT"
+  /** Spanish (Honduras) */
   | "ES_HN"
+  /** Spanish (Canary Islands) */
   | "ES_IC"
+  /** Spanish (Mexico) */
   | "ES_MX"
+  /** Spanish (Nicaragua) */
   | "ES_NI"
+  /** Spanish (Panama) */
   | "ES_PA"
+  /** Spanish (Peru) */
   | "ES_PE"
+  /** Spanish (Philippines) */
   | "ES_PH"
+  /** Spanish (Puerto Rico) */
   | "ES_PR"
+  /** Spanish (Paraguay) */
   | "ES_PY"
+  /** Spanish (El Salvador) */
   | "ES_SV"
+  /** Spanish (United States) */
   | "ES_US"
+  /** Spanish (Uruguay) */
   | "ES_UY"
+  /** Spanish (Venezuela) */
   | "ES_VE"
+  /** Estonian */
   | "ET"
+  /** Estonian (Estonia) */
   | "ET_EE"
+  /** Basque */
   | "EU"
+  /** Basque (Spain) */
   | "EU_ES"
+  /** Ewondo */
   | "EWO"
+  /** Ewondo (Cameroon) */
   | "EWO_CM"
+  /** Persian */
   | "FA"
+  /** Persian (Afghanistan) */
   | "FA_AF"
+  /** Persian (Iran) */
   | "FA_IR"
+  /** Fulah */
   | "FF"
+  /** Fulah (Adlam) */
   | "FF_ADLM"
+  /** Fulah (Adlam, Burkina Faso) */
   | "FF_ADLM_BF"
+  /** Fulah (Adlam, Cameroon) */
   | "FF_ADLM_CM"
+  /** Fulah (Adlam, Ghana) */
   | "FF_ADLM_GH"
+  /** Fulah (Adlam, Gambia) */
   | "FF_ADLM_GM"
+  /** Fulah (Adlam, Guinea) */
   | "FF_ADLM_GN"
+  /** Fulah (Adlam, Guinea-Bissau) */
   | "FF_ADLM_GW"
+  /** Fulah (Adlam, Liberia) */
   | "FF_ADLM_LR"
+  /** Fulah (Adlam, Mauritania) */
   | "FF_ADLM_MR"
+  /** Fulah (Adlam, Niger) */
   | "FF_ADLM_NE"
+  /** Fulah (Adlam, Nigeria) */
   | "FF_ADLM_NG"
+  /** Fulah (Adlam, Sierra Leone) */
   | "FF_ADLM_SL"
+  /** Fulah (Adlam, Senegal) */
   | "FF_ADLM_SN"
+  /** Fulah (Latin) */
   | "FF_LATN"
+  /** Fulah (Latin, Burkina Faso) */
   | "FF_LATN_BF"
+  /** Fulah (Latin, Cameroon) */
   | "FF_LATN_CM"
+  /** Fulah (Latin, Ghana) */
   | "FF_LATN_GH"
+  /** Fulah (Latin, Gambia) */
   | "FF_LATN_GM"
+  /** Fulah (Latin, Guinea) */
   | "FF_LATN_GN"
+  /** Fulah (Latin, Guinea-Bissau) */
   | "FF_LATN_GW"
+  /** Fulah (Latin, Liberia) */
   | "FF_LATN_LR"
+  /** Fulah (Latin, Mauritania) */
   | "FF_LATN_MR"
+  /** Fulah (Latin, Niger) */
   | "FF_LATN_NE"
+  /** Fulah (Latin, Nigeria) */
   | "FF_LATN_NG"
+  /** Fulah (Latin, Sierra Leone) */
   | "FF_LATN_SL"
+  /** Fulah (Latin, Senegal) */
   | "FF_LATN_SN"
+  /** Finnish */
   | "FI"
+  /** Filipino */
   | "FIL"
+  /** Filipino (Philippines) */
   | "FIL_PH"
+  /** Finnish (Finland) */
   | "FI_FI"
+  /** Faroese */
   | "FO"
+  /** Faroese (Denmark) */
   | "FO_DK"
+  /** Faroese (Faroe Islands) */
   | "FO_FO"
+  /** French */
   | "FR"
+  /** French (Belgium) */
   | "FR_BE"
+  /** French (Burkina Faso) */
   | "FR_BF"
+  /** French (Burundi) */
   | "FR_BI"
+  /** French (Benin) */
   | "FR_BJ"
+  /** French (St. Barthélemy) */
   | "FR_BL"
+  /** French (Canada) */
   | "FR_CA"
+  /** French (Congo - Kinshasa) */
   | "FR_CD"
+  /** French (Central African Republic) */
   | "FR_CF"
+  /** French (Congo - Brazzaville) */
   | "FR_CG"
+  /** French (Switzerland) */
   | "FR_CH"
+  /** French (Côte d’Ivoire) */
   | "FR_CI"
+  /** French (Cameroon) */
   | "FR_CM"
+  /** French (Djibouti) */
   | "FR_DJ"
+  /** French (Algeria) */
   | "FR_DZ"
+  /** French (France) */
   | "FR_FR"
+  /** French (Gabon) */
   | "FR_GA"
+  /** French (French Guiana) */
   | "FR_GF"
+  /** French (Guinea) */
   | "FR_GN"
+  /** French (Guadeloupe) */
   | "FR_GP"
+  /** French (Equatorial Guinea) */
   | "FR_GQ"
+  /** French (Haiti) */
   | "FR_HT"
+  /** French (Comoros) */
   | "FR_KM"
+  /** French (Luxembourg) */
   | "FR_LU"
+  /** French (Morocco) */
   | "FR_MA"
+  /** French (Monaco) */
   | "FR_MC"
+  /** French (St. Martin) */
   | "FR_MF"
+  /** French (Madagascar) */
   | "FR_MG"
+  /** French (Mali) */
   | "FR_ML"
+  /** French (Martinique) */
   | "FR_MQ"
+  /** French (Mauritania) */
   | "FR_MR"
+  /** French (Mauritius) */
   | "FR_MU"
+  /** French (New Caledonia) */
   | "FR_NC"
+  /** French (Niger) */
   | "FR_NE"
+  /** French (French Polynesia) */
   | "FR_PF"
+  /** French (St. Pierre & Miquelon) */
   | "FR_PM"
+  /** French (Réunion) */
   | "FR_RE"
+  /** French (Rwanda) */
   | "FR_RW"
+  /** French (Seychelles) */
   | "FR_SC"
+  /** French (Senegal) */
   | "FR_SN"
+  /** French (Syria) */
   | "FR_SY"
+  /** French (Chad) */
   | "FR_TD"
+  /** French (Togo) */
   | "FR_TG"
+  /** French (Tunisia) */
   | "FR_TN"
+  /** French (Vanuatu) */
   | "FR_VU"
+  /** French (Wallis & Futuna) */
   | "FR_WF"
+  /** French (Mayotte) */
   | "FR_YT"
+  /** Friulian */
   | "FUR"
+  /** Friulian (Italy) */
   | "FUR_IT"
+  /** Western Frisian */
   | "FY"
+  /** Western Frisian (Netherlands) */
   | "FY_NL"
+  /** Irish */
   | "GA"
+  /** Irish (United Kingdom) */
   | "GA_GB"
+  /** Irish (Ireland) */
   | "GA_IE"
+  /** Scottish Gaelic */
   | "GD"
+  /** Scottish Gaelic (United Kingdom) */
   | "GD_GB"
+  /** Galician */
   | "GL"
+  /** Galician (Spain) */
   | "GL_ES"
+  /** Swiss German */
   | "GSW"
+  /** Swiss German (Switzerland) */
   | "GSW_CH"
+  /** Swiss German (France) */
   | "GSW_FR"
+  /** Swiss German (Liechtenstein) */
   | "GSW_LI"
+  /** Gujarati */
   | "GU"
+  /** Gusii */
   | "GUZ"
+  /** Gusii (Kenya) */
   | "GUZ_KE"
+  /** Gujarati (India) */
   | "GU_IN"
+  /** Manx */
   | "GV"
+  /** Manx (Isle of Man) */
   | "GV_IM"
+  /** Hausa */
   | "HA"
+  /** Hawaiian */
   | "HAW"
+  /** Hawaiian (United States) */
   | "HAW_US"
+  /** Hausa (Ghana) */
   | "HA_GH"
+  /** Hausa (Niger) */
   | "HA_NE"
+  /** Hausa (Nigeria) */
   | "HA_NG"
+  /** Hebrew */
   | "HE"
+  /** Hebrew (Israel) */
   | "HE_IL"
+  /** Hindi */
   | "HI"
+  /** Hindi (India) */
   | "HI_IN"
+  /** Croatian */
   | "HR"
+  /** Croatian (Bosnia & Herzegovina) */
   | "HR_BA"
+  /** Croatian (Croatia) */
   | "HR_HR"
+  /** Upper Sorbian */
   | "HSB"
+  /** Upper Sorbian (Germany) */
   | "HSB_DE"
+  /** Hungarian */
   | "HU"
+  /** Hungarian (Hungary) */
   | "HU_HU"
+  /** Armenian */
   | "HY"
+  /** Armenian (Armenia) */
   | "HY_AM"
+  /** Interlingua */
   | "IA"
+  /** Indonesian */
   | "ID"
+  /** Indonesian (Indonesia) */
   | "ID_ID"
+  /** Igbo */
   | "IG"
+  /** Igbo (Nigeria) */
   | "IG_NG"
+  /** Sichuan Yi */
   | "II"
+  /** Sichuan Yi (China) */
   | "II_CN"
+  /** Icelandic */
   | "IS"
+  /** Icelandic (Iceland) */
   | "IS_IS"
+  /** Italian */
   | "IT"
+  /** Italian (Switzerland) */
   | "IT_CH"
+  /** Italian (Italy) */
   | "IT_IT"
+  /** Italian (San Marino) */
   | "IT_SM"
+  /** Italian (Vatican City) */
   | "IT_VA"
+  /** Japanese */
   | "JA"
+  /** Japanese (Japan) */
   | "JA_JP"
+  /** Ngomba */
   | "JGO"
+  /** Ngomba (Cameroon) */
   | "JGO_CM"
+  /** Machame */
   | "JMC"
+  /** Machame (Tanzania) */
   | "JMC_TZ"
+  /** Javanese */
   | "JV"
+  /** Javanese (Indonesia) */
   | "JV_ID"
+  /** Georgian */
   | "KA"
+  /** Kabyle */
   | "KAB"
+  /** Kabyle (Algeria) */
   | "KAB_DZ"
+  /** Kamba */
   | "KAM"
+  /** Kamba (Kenya) */
   | "KAM_KE"
+  /** Georgian (Georgia) */
   | "KA_GE"
+  /** Makonde */
   | "KDE"
+  /** Makonde (Tanzania) */
   | "KDE_TZ"
+  /** Kabuverdianu */
   | "KEA"
+  /** Kabuverdianu (Cape Verde) */
   | "KEA_CV"
+  /** Koyra Chiini */
   | "KHQ"
+  /** Koyra Chiini (Mali) */
   | "KHQ_ML"
+  /** Kikuyu */
   | "KI"
+  /** Kikuyu (Kenya) */
   | "KI_KE"
+  /** Kazakh */
   | "KK"
+  /** Kako */
   | "KKJ"
+  /** Kako (Cameroon) */
   | "KKJ_CM"
+  /** Kazakh (Kazakhstan) */
   | "KK_KZ"
+  /** Kalaallisut */
   | "KL"
+  /** Kalenjin */
   | "KLN"
+  /** Kalenjin (Kenya) */
   | "KLN_KE"
+  /** Kalaallisut (Greenland) */
   | "KL_GL"
+  /** Khmer */
   | "KM"
+  /** Khmer (Cambodia) */
   | "KM_KH"
+  /** Kannada */
   | "KN"
+  /** Kannada (India) */
   | "KN_IN"
+  /** Korean */
   | "KO"
+  /** Konkani */
   | "KOK"
+  /** Konkani (India) */
   | "KOK_IN"
+  /** Korean (North Korea) */
   | "KO_KP"
+  /** Korean (South Korea) */
   | "KO_KR"
+  /** Kashmiri */
   | "KS"
+  /** Shambala */
   | "KSB"
+  /** Shambala (Tanzania) */
   | "KSB_TZ"
+  /** Bafia */
   | "KSF"
+  /** Bafia (Cameroon) */
   | "KSF_CM"
+  /** Colognian */
   | "KSH"
+  /** Colognian (Germany) */
   | "KSH_DE"
+  /** Kashmiri (Arabic) */
   | "KS_ARAB"
+  /** Kashmiri (Arabic, India) */
   | "KS_ARAB_IN"
+  /** Kurdish */
   | "KU"
+  /** Kurdish (Turkey) */
   | "KU_TR"
+  /** Cornish */
   | "KW"
+  /** Cornish (United Kingdom) */
   | "KW_GB"
+  /** Kyrgyz */
   | "KY"
+  /** Kyrgyz (Kyrgyzstan) */
   | "KY_KG"
+  /** Langi */
   | "LAG"
+  /** Langi (Tanzania) */
   | "LAG_TZ"
+  /** Luxembourgish */
   | "LB"
+  /** Luxembourgish (Luxembourg) */
   | "LB_LU"
+  /** Ganda */
   | "LG"
+  /** Ganda (Uganda) */
   | "LG_UG"
+  /** Lakota */
   | "LKT"
+  /** Lakota (United States) */
   | "LKT_US"
+  /** Lingala */
   | "LN"
+  /** Lingala (Angola) */
   | "LN_AO"
+  /** Lingala (Congo - Kinshasa) */
   | "LN_CD"
+  /** Lingala (Central African Republic) */
   | "LN_CF"
+  /** Lingala (Congo - Brazzaville) */
   | "LN_CG"
+  /** Lao */
   | "LO"
+  /** Lao (Laos) */
   | "LO_LA"
+  /** Northern Luri */
   | "LRC"
+  /** Northern Luri (Iraq) */
   | "LRC_IQ"
+  /** Northern Luri (Iran) */
   | "LRC_IR"
+  /** Lithuanian */
   | "LT"
+  /** Lithuanian (Lithuania) */
   | "LT_LT"
+  /** Luba-Katanga */
   | "LU"
+  /** Luo */
   | "LUO"
+  /** Luo (Kenya) */
   | "LUO_KE"
+  /** Luyia */
   | "LUY"
+  /** Luyia (Kenya) */
   | "LUY_KE"
+  /** Luba-Katanga (Congo - Kinshasa) */
   | "LU_CD"
+  /** Latvian */
   | "LV"
+  /** Latvian (Latvia) */
   | "LV_LV"
+  /** Maithili */
   | "MAI"
+  /** Maithili (India) */
   | "MAI_IN"
+  /** Masai */
   | "MAS"
+  /** Masai (Kenya) */
   | "MAS_KE"
+  /** Masai (Tanzania) */
   | "MAS_TZ"
+  /** Meru */
   | "MER"
+  /** Meru (Kenya) */
   | "MER_KE"
+  /** Morisyen */
   | "MFE"
+  /** Morisyen (Mauritius) */
   | "MFE_MU"
+  /** Malagasy */
   | "MG"
+  /** Makhuwa-Meetto */
   | "MGH"
+  /** Makhuwa-Meetto (Mozambique) */
   | "MGH_MZ"
+  /** Metaʼ */
   | "MGO"
+  /** Metaʼ (Cameroon) */
   | "MGO_CM"
+  /** Malagasy (Madagascar) */
   | "MG_MG"
+  /** Maori */
   | "MI"
+  /** Maori (New Zealand) */
   | "MI_NZ"
+  /** Macedonian */
   | "MK"
+  /** Macedonian (North Macedonia) */
   | "MK_MK"
+  /** Malayalam */
   | "ML"
+  /** Malayalam (India) */
   | "ML_IN"
+  /** Mongolian */
   | "MN"
+  /** Manipuri */
   | "MNI"
+  /** Manipuri (Bangla) */
   | "MNI_BENG"
+  /** Manipuri (Bangla, India) */
   | "MNI_BENG_IN"
+  /** Mongolian (Mongolia) */
   | "MN_MN"
+  /** Marathi */
   | "MR"
+  /** Marathi (India) */
   | "MR_IN"
+  /** Malay */
   | "MS"
+  /** Malay (Brunei) */
   | "MS_BN"
+  /** Malay (Indonesia) */
   | "MS_ID"
+  /** Malay (Malaysia) */
   | "MS_MY"
+  /** Malay (Singapore) */
   | "MS_SG"
+  /** Maltese */
   | "MT"
+  /** Maltese (Malta) */
   | "MT_MT"
+  /** Mundang */
   | "MUA"
+  /** Mundang (Cameroon) */
   | "MUA_CM"
+  /** Burmese */
   | "MY"
+  /** Burmese (Myanmar (Burma)) */
   | "MY_MM"
+  /** Mazanderani */
   | "MZN"
+  /** Mazanderani (Iran) */
   | "MZN_IR"
+  /** Nama */
   | "NAQ"
+  /** Nama (Namibia) */
   | "NAQ_NA"
+  /** Norwegian Bokmål */
   | "NB"
+  /** Norwegian Bokmål (Norway) */
   | "NB_NO"
+  /** Norwegian Bokmål (Svalbard & Jan Mayen) */
   | "NB_SJ"
+  /** North Ndebele */
   | "ND"
+  /** Low German */
   | "NDS"
+  /** Low German (Germany) */
   | "NDS_DE"
+  /** Low German (Netherlands) */
   | "NDS_NL"
+  /** North Ndebele (Zimbabwe) */
   | "ND_ZW"
+  /** Nepali */
   | "NE"
+  /** Nepali (India) */
   | "NE_IN"
+  /** Nepali (Nepal) */
   | "NE_NP"
+  /** Dutch */
   | "NL"
+  /** Dutch (Aruba) */
   | "NL_AW"
+  /** Dutch (Belgium) */
   | "NL_BE"
+  /** Dutch (Caribbean Netherlands) */
   | "NL_BQ"
+  /** Dutch (Curaçao) */
   | "NL_CW"
+  /** Dutch (Netherlands) */
   | "NL_NL"
+  /** Dutch (Suriname) */
   | "NL_SR"
+  /** Dutch (Sint Maarten) */
   | "NL_SX"
+  /** Kwasio */
   | "NMG"
+  /** Kwasio (Cameroon) */
   | "NMG_CM"
+  /** Norwegian Nynorsk */
   | "NN"
+  /** Ngiemboon */
   | "NNH"
+  /** Ngiemboon (Cameroon) */
   | "NNH_CM"
+  /** Norwegian Nynorsk (Norway) */
   | "NN_NO"
+  /** Nuer */
   | "NUS"
+  /** Nuer (South Sudan) */
   | "NUS_SS"
+  /** Nyankole */
   | "NYN"
+  /** Nyankole (Uganda) */
   | "NYN_UG"
+  /** Oromo */
   | "OM"
+  /** Oromo (Ethiopia) */
   | "OM_ET"
+  /** Oromo (Kenya) */
   | "OM_KE"
+  /** Odia */
   | "OR"
+  /** Odia (India) */
   | "OR_IN"
+  /** Ossetic */
   | "OS"
+  /** Ossetic (Georgia) */
   | "OS_GE"
+  /** Ossetic (Russia) */
   | "OS_RU"
+  /** Punjabi */
   | "PA"
+  /** Punjabi (Arabic) */
   | "PA_ARAB"
+  /** Punjabi (Arabic, Pakistan) */
   | "PA_ARAB_PK"
+  /** Punjabi (Gurmukhi) */
   | "PA_GURU"
+  /** Punjabi (Gurmukhi, India) */
   | "PA_GURU_IN"
+  /** Nigerian Pidgin */
   | "PCM"
+  /** Nigerian Pidgin (Nigeria) */
   | "PCM_NG"
+  /** Polish */
   | "PL"
+  /** Polish (Poland) */
   | "PL_PL"
+  /** Prussian */
   | "PRG"
+  /** Pashto */
   | "PS"
+  /** Pashto (Afghanistan) */
   | "PS_AF"
+  /** Pashto (Pakistan) */
   | "PS_PK"
+  /** Portuguese */
   | "PT"
+  /** Portuguese (Angola) */
   | "PT_AO"
+  /** Portuguese (Brazil) */
   | "PT_BR"
+  /** Portuguese (Switzerland) */
   | "PT_CH"
+  /** Portuguese (Cape Verde) */
   | "PT_CV"
+  /** Portuguese (Equatorial Guinea) */
   | "PT_GQ"
+  /** Portuguese (Guinea-Bissau) */
   | "PT_GW"
+  /** Portuguese (Luxembourg) */
   | "PT_LU"
+  /** Portuguese (Macao SAR China) */
   | "PT_MO"
+  /** Portuguese (Mozambique) */
   | "PT_MZ"
+  /** Portuguese (Portugal) */
   | "PT_PT"
+  /** Portuguese (São Tomé & Príncipe) */
   | "PT_ST"
+  /** Portuguese (Timor-Leste) */
   | "PT_TL"
+  /** Quechua */
   | "QU"
+  /** Quechua (Bolivia) */
   | "QU_BO"
+  /** Quechua (Ecuador) */
   | "QU_EC"
+  /** Quechua (Peru) */
   | "QU_PE"
+  /** Romansh */
   | "RM"
+  /** Romansh (Switzerland) */
   | "RM_CH"
+  /** Rundi */
   | "RN"
+  /** Rundi (Burundi) */
   | "RN_BI"
+  /** Romanian */
   | "RO"
+  /** Rombo */
   | "ROF"
+  /** Rombo (Tanzania) */
   | "ROF_TZ"
+  /** Romanian (Moldova) */
   | "RO_MD"
+  /** Romanian (Romania) */
   | "RO_RO"
+  /** Russian */
   | "RU"
+  /** Russian (Belarus) */
   | "RU_BY"
+  /** Russian (Kyrgyzstan) */
   | "RU_KG"
+  /** Russian (Kazakhstan) */
   | "RU_KZ"
+  /** Russian (Moldova) */
   | "RU_MD"
+  /** Russian (Russia) */
   | "RU_RU"
+  /** Russian (Ukraine) */
   | "RU_UA"
+  /** Kinyarwanda */
   | "RW"
+  /** Rwa */
   | "RWK"
+  /** Rwa (Tanzania) */
   | "RWK_TZ"
+  /** Kinyarwanda (Rwanda) */
   | "RW_RW"
+  /** Sakha */
   | "SAH"
+  /** Sakha (Russia) */
   | "SAH_RU"
+  /** Samburu */
   | "SAQ"
+  /** Samburu (Kenya) */
   | "SAQ_KE"
+  /** Santali */
   | "SAT"
+  /** Santali (Ol Chiki) */
   | "SAT_OLCK"
+  /** Santali (Ol Chiki, India) */
   | "SAT_OLCK_IN"
+  /** Sangu */
   | "SBP"
+  /** Sangu (Tanzania) */
   | "SBP_TZ"
+  /** Sindhi */
   | "SD"
+  /** Sindhi (Arabic) */
   | "SD_ARAB"
+  /** Sindhi (Arabic, Pakistan) */
   | "SD_ARAB_PK"
+  /** Sindhi (Devanagari) */
   | "SD_DEVA"
+  /** Sindhi (Devanagari, India) */
   | "SD_DEVA_IN"
+  /** Northern Sami */
   | "SE"
+  /** Sena */
   | "SEH"
+  /** Sena (Mozambique) */
   | "SEH_MZ"
+  /** Koyraboro Senni */
   | "SES"
+  /** Koyraboro Senni (Mali) */
   | "SES_ML"
+  /** Northern Sami (Finland) */
   | "SE_FI"
+  /** Northern Sami (Norway) */
   | "SE_NO"
+  /** Northern Sami (Sweden) */
   | "SE_SE"
+  /** Sango */
   | "SG"
+  /** Sango (Central African Republic) */
   | "SG_CF"
+  /** Tachelhit */
   | "SHI"
+  /** Tachelhit (Latin) */
   | "SHI_LATN"
+  /** Tachelhit (Latin, Morocco) */
   | "SHI_LATN_MA"
+  /** Tachelhit (Tifinagh) */
   | "SHI_TFNG"
+  /** Tachelhit (Tifinagh, Morocco) */
   | "SHI_TFNG_MA"
+  /** Sinhala */
   | "SI"
+  /** Sinhala (Sri Lanka) */
   | "SI_LK"
+  /** Slovak */
   | "SK"
+  /** Slovak (Slovakia) */
   | "SK_SK"
+  /** Slovenian */
   | "SL"
+  /** Slovenian (Slovenia) */
   | "SL_SI"
+  /** Inari Sami */
   | "SMN"
+  /** Inari Sami (Finland) */
   | "SMN_FI"
+  /** Shona */
   | "SN"
+  /** Shona (Zimbabwe) */
   | "SN_ZW"
+  /** Somali */
   | "SO"
+  /** Somali (Djibouti) */
   | "SO_DJ"
+  /** Somali (Ethiopia) */
   | "SO_ET"
+  /** Somali (Kenya) */
   | "SO_KE"
+  /** Somali (Somalia) */
   | "SO_SO"
+  /** Albanian */
   | "SQ"
+  /** Albanian (Albania) */
   | "SQ_AL"
+  /** Albanian (North Macedonia) */
   | "SQ_MK"
+  /** Albanian (Kosovo) */
   | "SQ_XK"
+  /** Serbian */
   | "SR"
+  /** Serbian (Cyrillic) */
   | "SR_CYRL"
+  /** Serbian (Cyrillic, Bosnia & Herzegovina) */
   | "SR_CYRL_BA"
+  /** Serbian (Cyrillic, Montenegro) */
   | "SR_CYRL_ME"
+  /** Serbian (Cyrillic, Serbia) */
   | "SR_CYRL_RS"
+  /** Serbian (Cyrillic, Kosovo) */
   | "SR_CYRL_XK"
+  /** Serbian (Latin) */
   | "SR_LATN"
+  /** Serbian (Latin, Bosnia & Herzegovina) */
   | "SR_LATN_BA"
+  /** Serbian (Latin, Montenegro) */
   | "SR_LATN_ME"
+  /** Serbian (Latin, Serbia) */
   | "SR_LATN_RS"
+  /** Serbian (Latin, Kosovo) */
   | "SR_LATN_XK"
+  /** Sundanese */
   | "SU"
+  /** Sundanese (Latin) */
   | "SU_LATN"
+  /** Sundanese (Latin, Indonesia) */
   | "SU_LATN_ID"
+  /** Swedish */
   | "SV"
+  /** Swedish (Åland Islands) */
   | "SV_AX"
+  /** Swedish (Finland) */
   | "SV_FI"
+  /** Swedish (Sweden) */
   | "SV_SE"
+  /** Swahili */
   | "SW"
+  /** Swahili (Congo - Kinshasa) */
   | "SW_CD"
+  /** Swahili (Kenya) */
   | "SW_KE"
+  /** Swahili (Tanzania) */
   | "SW_TZ"
+  /** Swahili (Uganda) */
   | "SW_UG"
+  /** Tamil */
   | "TA"
+  /** Tamil (India) */
   | "TA_IN"
+  /** Tamil (Sri Lanka) */
   | "TA_LK"
+  /** Tamil (Malaysia) */
   | "TA_MY"
+  /** Tamil (Singapore) */
   | "TA_SG"
+  /** Telugu */
   | "TE"
+  /** Teso */
   | "TEO"
+  /** Teso (Kenya) */
   | "TEO_KE"
+  /** Teso (Uganda) */
   | "TEO_UG"
+  /** Telugu (India) */
   | "TE_IN"
+  /** Tajik */
   | "TG"
+  /** Tajik (Tajikistan) */
   | "TG_TJ"
+  /** Thai */
   | "TH"
+  /** Thai (Thailand) */
   | "TH_TH"
+  /** Tigrinya */
   | "TI"
+  /** Tigrinya (Eritrea) */
   | "TI_ER"
+  /** Tigrinya (Ethiopia) */
   | "TI_ET"
+  /** Turkmen */
   | "TK"
+  /** Turkmen (Turkmenistan) */
   | "TK_TM"
+  /** Tongan */
   | "TO"
+  /** Tongan (Tonga) */
   | "TO_TO"
+  /** Turkish */
   | "TR"
+  /** Turkish (Cyprus) */
   | "TR_CY"
+  /** Turkish (Turkey) */
   | "TR_TR"
+  /** Tatar */
   | "TT"
+  /** Tatar (Russia) */
   | "TT_RU"
+  /** Tasawaq */
   | "TWQ"
+  /** Tasawaq (Niger) */
   | "TWQ_NE"
+  /** Central Atlas Tamazight */
   | "TZM"
+  /** Central Atlas Tamazight (Morocco) */
   | "TZM_MA"
+  /** Uyghur */
   | "UG"
+  /** Uyghur (China) */
   | "UG_CN"
+  /** Ukrainian */
   | "UK"
+  /** Ukrainian (Ukraine) */
   | "UK_UA"
+  /** Urdu */
   | "UR"
+  /** Urdu (India) */
   | "UR_IN"
+  /** Urdu (Pakistan) */
   | "UR_PK"
+  /** Uzbek */
   | "UZ"
+  /** Uzbek (Arabic) */
   | "UZ_ARAB"
+  /** Uzbek (Arabic, Afghanistan) */
   | "UZ_ARAB_AF"
+  /** Uzbek (Cyrillic) */
   | "UZ_CYRL"
+  /** Uzbek (Cyrillic, Uzbekistan) */
   | "UZ_CYRL_UZ"
+  /** Uzbek (Latin) */
   | "UZ_LATN"
+  /** Uzbek (Latin, Uzbekistan) */
   | "UZ_LATN_UZ"
+  /** Vai */
   | "VAI"
+  /** Vai (Latin) */
   | "VAI_LATN"
+  /** Vai (Latin, Liberia) */
   | "VAI_LATN_LR"
+  /** Vai (Vai) */
   | "VAI_VAII"
+  /** Vai (Vai, Liberia) */
   | "VAI_VAII_LR"
+  /** Vietnamese */
   | "VI"
+  /** Vietnamese (Vietnam) */
   | "VI_VN"
+  /** Volapük */
   | "VO"
+  /** Vunjo */
   | "VUN"
+  /** Vunjo (Tanzania) */
   | "VUN_TZ"
+  /** Walser */
   | "WAE"
+  /** Walser (Switzerland) */
   | "WAE_CH"
+  /** Wolof */
   | "WO"
+  /** Wolof (Senegal) */
   | "WO_SN"
+  /** Xhosa */
   | "XH"
+  /** Xhosa (South Africa) */
   | "XH_ZA"
+  /** Soga */
   | "XOG"
+  /** Soga (Uganda) */
   | "XOG_UG"
+  /** Yangben */
   | "YAV"
+  /** Yangben (Cameroon) */
   | "YAV_CM"
+  /** Yiddish */
   | "YI"
+  /** Yoruba */
   | "YO"
+  /** Yoruba (Benin) */
   | "YO_BJ"
+  /** Yoruba (Nigeria) */
   | "YO_NG"
+  /** Cantonese */
   | "YUE"
+  /** Cantonese (Simplified) */
   | "YUE_HANS"
+  /** Cantonese (Simplified, China) */
   | "YUE_HANS_CN"
+  /** Cantonese (Traditional) */
   | "YUE_HANT"
+  /** Cantonese (Traditional, Hong Kong SAR China) */
   | "YUE_HANT_HK"
+  /** Standard Moroccan Tamazight */
   | "ZGH"
+  /** Standard Moroccan Tamazight (Morocco) */
   | "ZGH_MA"
+  /** Chinese */
   | "ZH"
+  /** Chinese (Simplified) */
   | "ZH_HANS"
+  /** Chinese (Simplified, China) */
   | "ZH_HANS_CN"
+  /** Chinese (Simplified, Hong Kong SAR China) */
   | "ZH_HANS_HK"
+  /** Chinese (Simplified, Macao SAR China) */
   | "ZH_HANS_MO"
+  /** Chinese (Simplified, Singapore) */
   | "ZH_HANS_SG"
+  /** Chinese (Traditional) */
   | "ZH_HANT"
+  /** Chinese (Traditional, Hong Kong SAR China) */
   | "ZH_HANT_HK"
+  /** Chinese (Traditional, Macao SAR China) */
   | "ZH_HANT_MO"
+  /** Chinese (Traditional, Taiwan) */
   | "ZH_HANT_TW"
+  /** Zulu */
   | "ZU"
+  /** Zulu (South Africa) */
   | "ZU_ZA"
   | "%future added value";
 
@@ -11020,6 +12309,22 @@ export type Mutation = {
   /** Install new app by using app manifest. Requires the following permissions: AUTHENTICATED_STAFF_USER and MANAGE_APPS. */
   appInstall?: Maybe<AppInstall>;
   /**
+   * Add a problem to the calling app.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: AUTHENTICATED_APP.
+   */
+  appProblemCreate?: Maybe<AppProblemCreate>;
+  /**
+   * Dismiss problems for an app.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: MANAGE_APPS, AUTHENTICATED_APP.
+   */
+  appProblemDismiss?: Maybe<AppProblemDismiss>;
+  /**
    * Re-enable sync webhooks for provided app. Can be used to manually re-enable sync webhooks for the app before the cooldown period ends.
    *
    * Added in Saleor 3.21.
@@ -11566,24 +12871,28 @@ export type Mutation = {
    * Create new digital content. This mutation must be sent as a `multipart` request. More detailed specs of the upload format can be found here: https://github.com/jaydenseric/graphql-multipart-request-spec
    *
    * Requires one of the following permissions: MANAGE_PRODUCTS.
+   * @deprecated Support for Digital Content is deprecated and will be removed in Saleor v3.23.0. This functionality is legacy and undocumented, and is not part of the supported API. Users should not rely on this behavior.
    */
   digitalContentCreate?: Maybe<DigitalContentCreate>;
   /**
    * Remove digital content assigned to given variant.
    *
    * Requires one of the following permissions: MANAGE_PRODUCTS.
+   * @deprecated Support for Digital Content is deprecated and will be removed in Saleor v3.23.0. This functionality is legacy and undocumented, and is not part of the supported API. Users should not rely on this behavior.
    */
   digitalContentDelete?: Maybe<DigitalContentDelete>;
   /**
    * Updates digital content.
    *
    * Requires one of the following permissions: MANAGE_PRODUCTS.
+   * @deprecated Support for Digital Content is deprecated and will be removed in Saleor v3.23.0. This functionality is legacy and undocumented, and is not part of the supported API. Users should not rely on this behavior.
    */
   digitalContentUpdate?: Maybe<DigitalContentUpdate>;
   /**
    * Generate new URL to digital content.
    *
    * Requires one of the following permissions: MANAGE_PRODUCTS.
+   * @deprecated Support for Digital Content is deprecated and will be removed in Saleor v3.23.0. This functionality is legacy and undocumented, and is not part of the supported API. Users should not rely on this behavior.
    */
   digitalContentUrlCreate?: Maybe<DigitalContentUrlCreate>;
   /**
@@ -13268,6 +14577,14 @@ export type MutationAppFetchManifestArgs = {
 
 export type MutationAppInstallArgs = {
   input: AppInstallInput;
+};
+
+export type MutationAppProblemCreateArgs = {
+  input: AppProblemCreateInput;
+};
+
+export type MutationAppProblemDismissArgs = {
+  input: AppProblemDismissInput;
 };
 
 export type MutationAppReenableSyncWebhooksArgs = {
@@ -18180,7 +19497,10 @@ export type Payment = Node &
     modified: Scalars["DateTime"]["output"];
     /** Order associated with a payment. */
     order?: Maybe<Order>;
-    /** Informs whether this is a partial payment. */
+    /**
+     * Informs whether this is a partial payment.
+     * @deprecated This field is reserved for the Adyen Gateway plugin. For other gateways, its value is always `false`. This field will be removed in 3.23 along with the plugin.
+     */
     partial: Scalars["Boolean"]["output"];
     /** Type of method used for payment. */
     paymentMethodType: Scalars["String"]["output"];
@@ -19634,6 +20954,7 @@ export type ProductBulkCreateErrorCode =
   | "ATTRIBUTE_VARIANTS_DISABLED"
   | "BLANK"
   | "DUPLICATED_INPUT_ITEM"
+  | "FILE_SIZE_LIMIT_EXCEEDED"
   | "GRAPHQL_ERROR"
   | "INVALID"
   | "INVALID_PRICE"
@@ -20068,6 +21389,7 @@ export type ProductErrorCode =
   | "ATTRIBUTE_VARIANTS_DISABLED"
   | "CANNOT_MANAGE_PRODUCT_WITHOUT_VARIANT"
   | "DUPLICATED_INPUT_ITEM"
+  | "FILE_SIZE_LIMIT_EXCEEDED"
   | "GRAPHQL_ERROR"
   | "INVALID"
   | "INVALID_FILE_TYPE"
@@ -21583,6 +22905,31 @@ export type ProductVariantDeletedProductVariantArgs = {
   channel?: InputMaybe<Scalars["String"]["input"]>;
 };
 
+/**
+ * Event sent when product variant discounted price is recalculated.
+ *
+ * Added in Saleor 3.22.
+ */
+export type ProductVariantDiscountedPriceUpdated = Event & {
+  __typename?: "ProductVariantDiscountedPriceUpdated";
+  /** The channel where the price changed. */
+  channel: Channel;
+  /** Time of the event. */
+  issuedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  /** The user or application that triggered the event. */
+  issuingPrincipal?: Maybe<IssuingPrincipal>;
+  /** The new discounted price. */
+  newPrice: Money;
+  /** The previous discounted price. */
+  previousPrice: Money;
+  /** The product variant the event relates to. */
+  productVariant: ProductVariant;
+  /** The application receiving the webhook. */
+  recipient?: Maybe<App>;
+  /** Saleor version that triggered the event. */
+  version?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type ProductVariantFilterInput = {
   isPreorder?: InputMaybe<Scalars["Boolean"]["input"]>;
   metadata?: InputMaybe<Array<MetadataFilter>>;
@@ -23088,12 +24435,14 @@ export type Query = {
    * Look up digital content by ID.
    *
    * Requires one of the following permissions: MANAGE_PRODUCTS.
+   * @deprecated Support for Digital Content is deprecated and will be removed in Saleor v3.23.0. This functionality is legacy and undocumented, and is not part of the supported API. Users should not rely on this behavior.
    */
   digitalContent?: Maybe<DigitalContent>;
   /**
    * List of digital content.
    *
    * Requires one of the following permissions: MANAGE_PRODUCTS.
+   * @deprecated Support for Digital Content is deprecated and will be removed in Saleor v3.23.0. This functionality is legacy and undocumented, and is not part of the supported API. Users should not rely on this behavior.
    */
   digitalContents?: Maybe<DigitalContentCountableConnection>;
   /**
@@ -23355,9 +24704,17 @@ export type Query = {
   /**
    * Look up a transaction by ID.
    *
-   * Requires one of the following permissions: HANDLE_PAYMENTS.
+   * Requires one of the following permissions: HANDLE_PAYMENTS, MANAGE_ORDERS.
    */
   transaction?: Maybe<TransactionItem>;
+  /**
+   * List of transactions. For apps with `MANAGE_ORDERS` permission, returns all transactions. For apps with just `HANDLE_PAYMENTS` permission, returns only transactions created by that app. For staff users, returns transactions from orders and checkouts in channels they have access to.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: HANDLE_PAYMENTS, MANAGE_ORDERS.
+   */
+  transactions?: Maybe<TransactionCountableConnection>;
   /**
    * Lookup a translatable item by ID.
    *
@@ -23894,6 +25251,14 @@ export type QueryTaxCountryConfigurationArgs = {
 export type QueryTransactionArgs = {
   id?: InputMaybe<Scalars["ID"]["input"]>;
   token?: InputMaybe<Scalars["UUID"]["input"]>;
+};
+
+export type QueryTransactionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<TransactionWhereInput>;
 };
 
 export type QueryTranslationArgs = {
@@ -25716,6 +27081,14 @@ export type Shop = ObjectWithMetadata & {
   permissions: Array<Permission>;
   /** List of possible phone prefixes. */
   phonePrefixes: Array<Scalars["String"]["output"]>;
+  /**
+   * When enabled, address fields that are not valid for a given country (according to Google's i18n address data) will be preserved instead of being removed during validation. Validation errors are still returned.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Requires one of the following permissions: MANAGE_SETTINGS.
+   */
+  preserveAllAddressFields: Scalars["Boolean"]["output"];
   /** List of private metadata items. Requires staff permissions to access. */
   privateMetadata: Array<MetadataItem>;
   /**
@@ -25938,6 +27311,12 @@ export type ShopSettingsInput = {
    * Warning: never store sensitive information, including financial data such as credit card details.
    */
   metadata?: InputMaybe<Array<MetadataInput>>;
+  /**
+   * When enabled, address fields that are not valid for a given country (according to Google's i18n address data) will be preserved instead of being removed during validation. Validation errors are still returned.
+   *
+   * Added in Saleor 3.22.
+   */
+  preserveAllAddressFields?: InputMaybe<Scalars["Boolean"]["input"]>;
   /**
    * Shop private metadata. Requires permissions to modify and to read the metadata of the object it's attached to.
    *
@@ -26727,6 +28106,14 @@ export type Subscription = {
    * Note: this API is currently in Feature Preview and can be subject to changes at later point.
    */
   orderUpdated?: Maybe<OrderUpdated>;
+  /**
+   * Event sent when product variant discounted price is recalculated.
+   *
+   * Added in Saleor 3.22.
+   *
+   * Note: this API is currently in Feature Preview and can be subject to changes at later point.
+   */
+  productVariantDiscountedPriceUpdated?: Maybe<ProductVariantDiscountedPriceUpdated>;
 };
 
 export type SubscriptionCheckoutCreatedArgs = {
@@ -26806,6 +28193,10 @@ export type SubscriptionOrderRefundedArgs = {
 };
 
 export type SubscriptionOrderUpdatedArgs = {
+  channels?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+export type SubscriptionProductVariantDiscountedPriceUpdatedArgs = {
   channels?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -27540,6 +28931,23 @@ export type TransactionChargeRequested = Event & {
   version?: Maybe<Scalars["String"]["output"]>;
 };
 
+export type TransactionCountableConnection = {
+  __typename?: "TransactionCountableConnection";
+  edges: Array<TransactionCountableEdge>;
+  /** Pagination data for this connection. */
+  pageInfo: PageInfo;
+  /** A total count of items in the collection. */
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type TransactionCountableEdge = {
+  __typename?: "TransactionCountableEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: TransactionItem;
+};
+
 /**
  * Creates transaction for checkout or order.
  *
@@ -27740,6 +29148,12 @@ export type TransactionFilterInput = {
   metadata?: InputMaybe<MetadataFilterInput>;
   /** Filter by payment method details used to pay for the order. */
   paymentMethodDetails?: InputMaybe<PaymentMethodDetailsFilterInput>;
+  /**
+   * Filter by PSP reference of transactions.
+   *
+   * Added in Saleor 3.22.
+   */
+  pspReference?: InputMaybe<StringFilterInput>;
 };
 
 /**
@@ -28160,6 +29574,18 @@ export type TransactionUpdateInput = {
   pspReference?: InputMaybe<Scalars["String"]["input"]>;
 };
 
+export type TransactionWhereInput = {
+  /** List of conditions that must be met. */
+  AND?: InputMaybe<Array<TransactionWhereInput>>;
+  /** A list of conditions of which at least one must be met. */
+  OR?: InputMaybe<Array<TransactionWhereInput>>;
+  /** Filter by app identifier. */
+  appIdentifier?: InputMaybe<StringFilterInput>;
+  ids?: InputMaybe<Array<Scalars["ID"]["input"]>>;
+  /** Filter by PSP reference. */
+  pspReference?: InputMaybe<StringFilterInput>;
+};
+
 export type TranslatableItem =
   | AttributeTranslatableContent
   | AttributeValueTranslatableContent
@@ -28504,6 +29930,7 @@ export type UserOrdersArgs = {
   before?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
   last?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<CustomerOrderWhereInput>;
 };
 
 /** Represents user data. */
@@ -30213,6 +31640,7 @@ export type WebhookEventTypeAsyncEnum =
   | "PRODUCT_VARIANT_CREATED"
   /** A product variant is deleted. Warning: this event will not be executed when parent product has been deleted. Check PRODUCT_DELETED. */
   | "PRODUCT_VARIANT_DELETED"
+  | "PRODUCT_VARIANT_DISCOUNTED_PRICE_UPDATED"
   /** A product variant metadata is updated. */
   | "PRODUCT_VARIANT_METADATA_UPDATED"
   /** A product variant is out of stock. */
@@ -30539,6 +31967,7 @@ export type WebhookEventTypeEnum =
   | "PRODUCT_VARIANT_CREATED"
   /** A product variant is deleted. Warning: this event will not be executed when parent product has been deleted. Check PRODUCT_DELETED. */
   | "PRODUCT_VARIANT_DELETED"
+  | "PRODUCT_VARIANT_DISCOUNTED_PRICE_UPDATED"
   /** A product variant metadata is updated. */
   | "PRODUCT_VARIANT_METADATA_UPDATED"
   /** A product variant is out of stock. */
@@ -30782,6 +32211,7 @@ export type WebhookSampleEventTypeEnum =
   | "PRODUCT_VARIANT_BACK_IN_STOCK"
   | "PRODUCT_VARIANT_CREATED"
   | "PRODUCT_VARIANT_DELETED"
+  | "PRODUCT_VARIANT_DISCOUNTED_PRICE_UPDATED"
   | "PRODUCT_VARIANT_METADATA_UPDATED"
   | "PRODUCT_VARIANT_OUT_OF_STOCK"
   | "PRODUCT_VARIANT_STOCK_UPDATED"

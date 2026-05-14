@@ -3,13 +3,15 @@ import { Hono } from "hono";
 import { APP_CONFIG } from "@/apps/handler/config";
 import { container } from "@/apps/handler/di/container";
 import { fetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
-import { ProductUpdatedDocument } from "@/infrastructure/integrations/saleor/graphql/ProductUpdateSubscription.generated";
 import { saleorRegisterHeadersSchema } from "@/infrastructure/integrations/saleor/header/schema";
 import { createSaleorInstall } from "@/infrastructure/integrations/saleor/install/saleor-install";
 import { saleorRegisterPayloadSchema } from "@/infrastructure/integrations/saleor/install/schema";
 import type { SaleorAppManifest } from "@/infrastructure/integrations/saleor/types";
+import { getAppIdentifier } from "@/infrastructure/integrations/saleor/utils";
 import { BadGatewayException, ForbiddenException } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
+
+import { ProductUpdatedDocument } from "./graphql/queries/ProductUpdateSubscription.generated";
 
 import pkg from "@/../package.json";
 
@@ -29,7 +31,7 @@ routes.get("/manifest", (context) => {
   const baseUrl = context.get("baseUrl");
 
   const manifest: SaleorAppManifest = {
-    id: `${APP_CONFIG.NAME.toLowerCase().replace(/\s+/g, "-")}.app`,
+    id: getAppIdentifier(APP_CONFIG.NAME),
     version: APP_CONFIG.VERSION,
     name: APP_CONFIG.NAME,
     about: APP_CONFIG.DESCRIPTION,

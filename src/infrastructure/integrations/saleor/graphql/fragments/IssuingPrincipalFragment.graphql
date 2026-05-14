@@ -1,0 +1,9 @@
+fragment IssuingPrincipal on IssuingPrincipal {
+  __typename
+  ... on App {
+    identifier
+  }
+  ... on User {
+    email
+  }
+}

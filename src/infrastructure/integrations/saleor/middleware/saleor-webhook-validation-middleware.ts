@@ -10,17 +10,26 @@ import {
 import { UnauthorizedError } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 
-type Opts = {
-  joseAuthService: JoseAuthService;
-};
-
 /**
  * Validates Saleor webhook requests:
- * 1. Zod validates required Saleor headers
- * 2. Verifies JWS signature against issuer's JWKS (raw body bytes)
- * 3. Zod validates body envelope shape
+ *   1. Zod validates required Saleor headers
+ *   2. Verifies JWS signature against issuer's JWKS (raw body bytes)
+ *   3. Zod validates body envelope shape
+ *
+ * Usage (Hono):
+ *
+ *   webhooks.use(
+ *     "*",
+ *     saleorWebhookValidationMiddleware({
+ *       joseAuthService: container.items.joseAuthService,
+ *     }),
+ *   );
  */
-export function saleorWebhookValidationMiddleware({ joseAuthService }: Opts): MiddlewareHandler {
+export function saleorWebhookValidationMiddleware({
+  joseAuthService,
+}: {
+  joseAuthService: JoseAuthService;
+}): MiddlewareHandler {
   const verify = createMiddleware(async (context, next) => {
     const headers = context.req.valid("header" as never) as {
       "saleor-signature": string;

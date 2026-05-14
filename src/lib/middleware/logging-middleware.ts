@@ -9,13 +9,14 @@ const STATIC_PATH_RE =
 
 const isStaticRequest = (context: Context) => STATIC_PATH_RE.test(context.req.path);
 
-type Options = {
-  environment?: string;
-  isProduction?: boolean;
-  skip?: (context: Context) => boolean;
-};
-
-export function createLoggingMiddleware(logger: Logger, options: Options = {}) {
+export function createLoggingMiddleware(
+  logger: Logger,
+  options: {
+    environment?: string;
+    isProduction?: boolean;
+    skip?: (context: Context) => boolean;
+  } = {},
+) {
   const { environment, isProduction = false, skip = isStaticRequest } = options;
 
   return createMiddleware(async (context, next) => {

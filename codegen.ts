@@ -18,7 +18,7 @@ const config: CodegenConfig = {
     // Saleor operations (near-operation-file)
     "src/": {
       schema: `${saleorUrl}/graphql/`,
-      documents: ["src/infrastructure/integrations/saleor/graphql/**/*.graphql"],
+      documents: ["src/**/saleor/graphql/**/*.graphql"],
       preset: "near-operation-file",
       presetConfig: {
         extension: ".generated.ts",

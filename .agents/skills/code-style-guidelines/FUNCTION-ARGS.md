@@ -31,6 +31,43 @@ export const outKey = (filename: string): string => `${OUT_PREFIX}/${filename}`;
 - **Forward-compatible** — adding an optional field doesn't break existing callers.
 - **Refactor-friendly** — renaming a field = one edit in caller + definition; rearranging positional args touches every callsite.
 
+## Inline vs extracted Options type
+
+When the destructured argument's type is defined locally:
+
+- **≤3 props** → keep the type **inline** in the parameter list. No separate `type Options = {...}` alias.
+- **≥4 props** → extract to a named alias above the function for readability.
+
+```typescript
+// ✅ 2 props — inline
+export function saleorPermissionsMiddleware(options: {
+  joseAuthService: JoseAuthService;
+  required: SaleorPermission[];
+}): MiddlewareHandler {
+  /* ... */
+}
+
+// ✅ 4+ props — extract
+type CrawlOptions = {
+  jobId: string;
+  filename: string;
+  bucket: string;
+  prefix: string;
+  retries: number;
+};
+export function crawlCategories(options: CrawlOptions) {
+  /* ... */
+}
+
+// ❌ 2 props with a separate alias (premature extraction)
+type Options = { joseAuthService: JoseAuthService; required: SaleorPermission[] };
+export function saleorPermissionsMiddleware(options: Options) {
+  /* ... */
+}
+```
+
+Past 3 props the signature wraps awkwardly and readers lose track of which field belongs where. Below that, inline is more discoverable.
+
 ## Class constructors
 
 Constructors with **2+ params** also take a single destructured object. Lose the `private readonly` parameter-property shorthand — declare fields at the top, assign explicitly.
