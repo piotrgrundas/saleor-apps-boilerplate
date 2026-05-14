@@ -6,6 +6,27 @@ import { build as viteBuild } from "vite-plus";
 
 export const DIST_DIR = path.resolve("dist");
 export const APPS_DIR = path.resolve("src/apps");
+export const PUBLIC_DIR = path.resolve("public");
+
+export function clean() {
+  fs.rmSync(DIST_DIR, { recursive: true, force: true });
+  fs.mkdirSync(DIST_DIR, { recursive: true });
+}
+
+export function copyPublicAssets() {
+  if (!fs.existsSync(PUBLIC_DIR)) return;
+  for (const file of fs.readdirSync(PUBLIC_DIR)) {
+    fs.copyFileSync(path.join(PUBLIC_DIR, file), path.join(DIST_DIR, file));
+  }
+  console.log("Public assets copied.");
+}
+
+export function writeRootPackageJson() {
+  fs.writeFileSync(
+    path.join(DIST_DIR, "package.json"),
+    JSON.stringify({ type: "module" }, null, 2),
+  );
+}
 
 /**
  * Lambda runtime provides these — keep external, never bundle.

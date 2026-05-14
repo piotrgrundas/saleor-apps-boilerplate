@@ -78,25 +78,32 @@ Server bundle externals (`tooling/build/build-utils.ts`) — kept external becau
 
 - `@aws-sdk/*` — AWS Lambda Node 24 runtime
 
-Everything else (including `@sentry/node`) gets bundled. No Lambda Layer required.
+Everything else (including `@sentry/aws-serverless`) gets bundled. No Lambda Layer required.
 
 ### Sentry (error reporting)
 
-Sentry is bundled via `@sentry/node` with `defaultIntegrations: false` — only error capture is active, no OpenTelemetry auto-instrumentation. Init reads `SENTRY_DSN` at startup; without it, capture is a silent no-op.
+Sentry is bundled via `@sentry/aws-serverless` with `defaultIntegrations: false` — only error capture + handler wrap stay active, no OpenTelemetry auto-instrumentation. Memory footprint: ~150 MB used (vs ~270 MB with the Sentry Lambda Layer).
 
-Lambda env vars:
+Configuration flows from `APP_CONFIG`:
+
+- `SENTRY_DSN` — required to enable Sentry; without it the reporter switches to noop
+- `ENVIRONMENT` — passed as Sentry environment tag (`local` / `development` / `staging` / `production`)
+- `RELEASE` — derived from `package.json` name + version (`<name>@<version>`, lowercased)
+
+Lambda env vars (Terraform):
 
 ```hcl
 environment {
   variables = {
-    SENTRY_DSN         = var.sentry_dsn
-    SENTRY_ENVIRONMENT = var.environment
-    # Optional: SENTRY_RELEASE
+    SENTRY_DSN  = var.sentry_dsn
+    ENVIRONMENT = var.environment
   }
 }
 ```
 
-To enable tracing/profiling later, edit `src/infrastructure/integrations/sentry/sentry-error-reporter.ts` — flip `defaultIntegrations` to `true` and set `tracesSampleRate`. Or swap to the Sentry Lambda Layer (see [Sentry docs](https://docs.sentry.io/platforms/javascript/guides/aws-lambda/install/layer/)) for full OTel.
+Wiring lives in [`src/infrastructure/integrations/sentry/sentry-error-reporter.ts`](src/infrastructure/integrations/sentry/sentry-error-reporter.ts). To enable tracing/profiling, flip `defaultIntegrations` to `true` and set `tracesSampleRate`. For full OTel auto-instrumentation, swap to the Sentry Lambda Layer (see [Sentry docs](https://docs.sentry.io/platforms/javascript/guides/aws-lambda/install/layer/)) — Lambda will need ≥512 MB memory.
+
+The handler is wrapped via `errorReporter.wrap(handle(app))` so Sentry flushes pending events before Lambda freezes. Every `logger.error(...)` call also auto-routes through the `ErrorReporter` port — no manual `captureException` needed in app code.
 
 ## awslocal commands
 
