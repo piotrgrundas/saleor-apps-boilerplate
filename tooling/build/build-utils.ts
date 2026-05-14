@@ -56,27 +56,28 @@ const SHARED = {
   logLevel: "warn" as const,
 };
 
-export async function buildServer(app: AppEntry, options: { minify: boolean; nodeEnv: string }) {
-  const outDir = path.join(DIST_DIR, app.name);
+export type ServerBuildOptions = { minify: boolean; nodeEnv: string };
 
-  await viteBuild({
-    ...SHARED,
-    define: { "process.env.NODE_ENV": JSON.stringify(options.nodeEnv) },
-    build: {
-      outDir,
-      emptyOutDir: false,
-      ssr: app.entryPath,
-      minify: options.minify,
-      target: "node24",
-      rollupOptions: {
-        external: [...SERVER_EXTERNALS],
-        output: { entryFileNames: "[name].js" },
-      },
+export const buildServerConfig = (app: AppEntry, options: ServerBuildOptions) => ({
+  ...SHARED,
+  define: { "process.env.NODE_ENV": JSON.stringify(options.nodeEnv) },
+  build: {
+    outDir: path.join(DIST_DIR, app.name),
+    emptyOutDir: false,
+    ssr: app.entryPath,
+    minify: options.minify,
+    target: "node24",
+    rollupOptions: {
+      external: [...SERVER_EXTERNALS],
+      output: { entryFileNames: "[name].js" },
     },
-    ssr: { target: "node", noExternal: true },
-  });
+  },
+  ssr: { target: "node" as const, noExternal: true },
+});
 
-  console.log(`  ${app.name} → ${outDir}`);
+export async function buildServer(app: AppEntry, options: ServerBuildOptions) {
+  await viteBuild(buildServerConfig(app, options));
+  console.log(`  ${app.name} → ${path.join(DIST_DIR, app.name)}`);
 }
 
 export async function buildClient(app: AppEntry, options: { minify: boolean; nodeEnv: string }) {

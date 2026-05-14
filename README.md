@@ -49,13 +49,15 @@ Locally, apps are auto-discovered. BASE_PATH is applied as app-name dir (src/app
 
 ## Commands
 
-| Command          | Description                   |
-| ---------------- | ----------------------------- |
-| `vp run dev`     | Dev server, hot reload        |
-| `vp run build`   | Build server + client         |
-| `vp test`        | Run tests                     |
-| `vp check`       | Lint + format + type-check    |
-| `vp run codegen` | Generate Saleor GraphQL types |
+| Command                | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| `vp run dev`           | Dev server, hot reload                              |
+| `vp run build`         | Build server + client                               |
+| `vp run build:dev`     | Build server + client without minify                |
+| `vp run build:analyze` | Bundle size treemap per app → `dist-analyze/*.html` |
+| `vp test`              | Run tests                                           |
+| `vp check`             | Lint + format + type-check                          |
+| `vp run codegen`       | Generate Saleor GraphQL types                       |
 
 ## Environment
 

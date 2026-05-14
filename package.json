@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "concurrently --raw \"tsx watch -r dotenv/config src/serve.ts\" \"tsx tooling/build/build-client.ts\"",
     "build": "NODE_ENV=production tsx tooling/build/build.ts",
+    "build:analyze": "tsx tooling/build/analyze.ts",
     "build:client": "tsx tooling/build/build-client.ts",
     "test": "vp test",
     "test:watch": "vp test --watch",
@@ -61,6 +62,7 @@
     "eslint-plugin-import": "^2.32.0",
     "tsx": "^4.19.4",
     "typescript": "^6.0.3",
+    "vite-bundle-analyzer": "^1.3.8",
     "vite-plus": "0.1.21",
     "vitest": "npm:@voidzero-dev/vite-plus-test@0.1.21"
   },
