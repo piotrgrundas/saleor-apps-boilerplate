@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createLogger } from "@/di/factories/logging";
 
-const logger = createLogger({ level: "info" }).withTag("dev server");
+const logger = createLogger({ level: "info", prettify: true, name: "dev server" });
 const app = new Hono();
 
 const appsDir = join(dirname(fileURLToPath(import.meta.url)), "apps");

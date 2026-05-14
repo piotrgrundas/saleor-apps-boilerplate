@@ -47,12 +47,7 @@ export function discoverEntryPoints(filename: string): AppEntry[] {
 const SHARED = {
   configFile: false as const,
   root: process.cwd(),
-  resolve: {
-    alias: [
-      { find: "@/constants", replacement: path.resolve("constants.ts") },
-      { find: /^@\//, replacement: path.resolve("src") + "/" },
-    ],
-  },
+  resolve: { tsconfigPaths: true },
   logLevel: "warn" as const,
 };
 
