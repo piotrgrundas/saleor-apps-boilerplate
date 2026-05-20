@@ -1,12 +1,15 @@
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createMiddleware } from "hono/factory";
 
+import { IS_PROD } from "@/constants";
+
 /**
  * Serves static assets from each app's dist/{appName}/assets/ directory.
  * Rewrites URL path /assets/{appName}/file → /{appName}/assets/file on disk.
  */
 export function createAssetsMiddleware(basePath: string) {
   const prefix = `${basePath}/assets/`;
+  const root = IS_PROD ? "./" : "./dist";
 
   return createMiddleware(async (context, next) => {
     if (!context.req.path.startsWith(prefix)) {
@@ -22,7 +25,7 @@ export function createAssetsMiddleware(basePath: string) {
     const rewrittenPath = `/${appName}/assets/${file}`;
 
     return serveStatic({
-      root: "./dist",
+      root,
       rewriteRequestPath: () => rewrittenPath,
     })(context, next);
   });

@@ -1,26 +1,51 @@
+import type { AppBridge } from "@saleor/app-sdk/app-bridge";
 import { AppBridgeProvider, useAppBridge } from "@saleor/app-sdk/app-bridge";
-import type { PropsWithChildren } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
-function ReadyApp({ children }: PropsWithChildren) {
-  const { appBridgeState } = useAppBridge();
-  const isReady = appBridgeState?.ready ?? false;
+function ReadyApp({ children }: { children: ReactNode }) {
+  const { appBridge, appBridgeState } = useAppBridge();
+  const [isReady, setIsReady] = useState(false);
 
-  // Support standalone development mode (set SALEOR_UI_APP_TOKEN env var)
-  const devToken = window.SALEOR_UI_APP_TOKEN;
-  const isStandalone = !appBridgeState?.saleorApiUrl && devToken;
+  useEffect(() => {
+    if (!appBridge || isReady) return;
 
-  if (!isReady && !isStandalone) {
+    const state = appBridge.getState();
+
+    /**
+     * Empty `saleorApiUrl` = SPA is not inside a Saleor iframe. Skip the
+     * handshake gate and run in standalone-dev mode (requires the SPA to
+     * call APIs that tolerate missing auth, e.g. dev-bypassed middleware).
+     */
+    if (!state.saleorApiUrl) {
+      setIsReady(true);
+      return;
+    }
+
+    if (state.ready) {
+      setIsReady(true);
+    }
+  }, [appBridge, appBridgeState, isReady]);
+
+  if (!isReady) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>Loading...</div>
+      <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+        Initializing…
+      </div>
     );
   }
 
   return <>{children}</>;
 }
 
-export function SaleorAppsProvider({ children }: PropsWithChildren) {
+export function SaleorAppsProvider({
+  appBridgeInstance,
+  children,
+}: {
+  appBridgeInstance: AppBridge;
+  children: ReactNode;
+}) {
   return (
-    <AppBridgeProvider>
+    <AppBridgeProvider appBridgeInstance={appBridgeInstance}>
       <ReadyApp>{children}</ReadyApp>
     </AppBridgeProvider>
   );

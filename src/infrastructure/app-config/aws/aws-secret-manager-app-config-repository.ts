@@ -11,8 +11,8 @@ import type { Context } from "@/domain/context";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { AppConfigErrorCode } from "@/domain/errors/scopes/app-config";
 import type {
-  AppConfigRepository,
   AppConfigRepositoryOptions,
+  AppConfigRepositoryProvider,
 } from "@/domain/ports/app-config-repository";
 import {
   saleorAppConfigMapSchema,
@@ -24,7 +24,7 @@ import { getErrorMessage } from "@/lib/error/helpers";
 
 export const createAwsSecretManagerAppConfigRepository = ({
   configPath,
-}: AppConfigRepositoryOptions): AppConfigRepository => {
+}: AppConfigRepositoryOptions): AppConfigRepositoryProvider => {
   prepareConfig({
     name: "AwsSecretManagerAppConfigRepository",
     schema: awsConfigSchema,
@@ -122,15 +122,15 @@ export const createAwsSecretManagerAppConfigRepository = ({
     }
   };
 
-  return {
-    async get(saleorDomain, ctx) {
+  return (ctx) => ({
+    async get(saleorDomain) {
       const configMapResult = await getConfigMap(ctx);
 
       if (configMapResult.isErr()) return err(configMapResult.error);
 
       return ok(configMapResult.value[saleorDomain] ?? null);
     },
-    async set({ saleorDomain, config }, ctx) {
+    async set({ saleorDomain, config }) {
       const configMapResult = await getConfigMap(ctx);
 
       if (configMapResult.isErr()) return err(configMapResult.error);
@@ -138,7 +138,7 @@ export const createAwsSecretManagerAppConfigRepository = ({
       configMapResult.value[saleorDomain] = config;
       return saveConfigMap(configMapResult.value, ctx);
     },
-    async delete(saleorDomain, ctx) {
+    async delete(saleorDomain) {
       const configMapResult = await getConfigMap(ctx);
 
       if (configMapResult.isErr()) return err(configMapResult.error);
@@ -147,5 +147,5 @@ export const createAwsSecretManagerAppConfigRepository = ({
 
       return saveConfigMap(configMapResult.value, ctx);
     },
-  };
+  });
 };

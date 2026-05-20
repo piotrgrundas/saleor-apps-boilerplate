@@ -5,8 +5,8 @@ import type { AsyncResult } from "@/domain/errors/result";
 import type { JwksErrorCode } from "@/domain/errors/scopes/jwks";
 import type {
   JsonWebKeySet,
-  JWKSRepository,
   JWKSRepositoryOptions,
+  JWKSRepositoryProvider,
 } from "@/domain/ports/jwks-repository";
 import type { Logger } from "@/domain/ports/logger";
 import { getErrorMessage } from "@/lib/error/helpers";
@@ -18,7 +18,9 @@ const jwksUrlFor = (issuer: string): string => {
   return `${origin}/.well-known/jwks.json`;
 };
 
-export const createJwksRepositoryFactory = (opts?: JWKSRepositoryOptions): JWKSRepository => {
+export const createJwksRepositoryFactory = (
+  opts?: JWKSRepositoryOptions,
+): JWKSRepositoryProvider => {
   const stdTTL = opts?.cacheTtlSeconds ?? DEFAULT_CACHE_TTL_SECONDS;
   const cache = new NodeCache<JsonWebKeySet>({ stdTTL });
 
@@ -57,8 +59,8 @@ export const createJwksRepositoryFactory = (opts?: JWKSRepositoryOptions): JWKSR
     }
   };
 
-  return {
-    async get({ issuer, forceRefresh = false }, ctx) {
+  return (ctx) => ({
+    async get({ issuer, forceRefresh = false }) {
       const jwksUrl = jwksUrlFor(issuer);
 
       if (!forceRefresh) {
@@ -81,10 +83,10 @@ export const createJwksRepositoryFactory = (opts?: JWKSRepositoryOptions): JWKSR
       return result;
     },
 
-    async set({ issuer, jwks }, _ctx) {
+    async set({ issuer, jwks }) {
       cache.set(jwksUrlFor(issuer), jwks);
 
       return ok(undefined);
     },
-  };
+  });
 };

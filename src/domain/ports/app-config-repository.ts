@@ -30,10 +30,12 @@ export type AppConfigRepositoryOptions = {
 };
 
 export type AppConfigRepository = {
-  get(saleorDomain: string, ctx: Context): AsyncResult<SaleorAppConfig | null, AppConfigErrorCode>;
-  set(
-    input: { saleorDomain: string; config: SaleorAppConfig },
-    ctx: Context,
-  ): AsyncResult<void, AppConfigErrorCode>;
-  delete(saleorDomain: string, ctx: Context): AsyncResult<void, AppConfigErrorCode>;
+  get(saleorDomain: string): AsyncResult<SaleorAppConfig | null, AppConfigErrorCode>;
+  set(input: {
+    saleorDomain: string;
+    config: SaleorAppConfig;
+  }): AsyncResult<void, AppConfigErrorCode>;
+  delete(saleorDomain: string): AsyncResult<void, AppConfigErrorCode>;
 };
+
+export type AppConfigRepositoryProvider = (ctx: Context) => AppConfigRepository;

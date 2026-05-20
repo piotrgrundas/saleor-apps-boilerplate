@@ -1,8 +1,11 @@
 import { err, ok } from "neverthrow";
 import { describe, expect } from "vite-plus/test";
 
-import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
-import type { JWKSRepository } from "@/domain/ports/jwks-repository";
+import type {
+  AppConfigRepository,
+  AppConfigRepositoryProvider,
+} from "@/domain/ports/app-config-repository";
+import type { JWKSRepositoryProvider } from "@/domain/ports/jwks-repository";
 import type { FetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
 import { it } from "@/lib/test/it";
 import {
@@ -25,13 +28,23 @@ const okAppId =
   async () =>
     ok(appId);
 
+const repoProvider =
+  (repo: AppConfigRepository): AppConfigRepositoryProvider =>
+  () =>
+    repo;
+
+const jwksProvider =
+  (jwks: ReturnType<typeof createMockJwksRepository>): JWKSRepositoryProvider =>
+  () =>
+    jwks;
+
 describe("createSaleorInstall", () => {
   it("installs app successfully", async () => {
     // given
     const install = createSaleorInstall({
-      appConfigRepository: createMockAppConfigRepository(),
+      appConfigRepository: repoProvider(createMockAppConfigRepository()),
       fetchAppId: okAppId("app-123"),
-      jwksRepository: createMockJwksRepository(),
+      jwksRepository: jwksProvider(createMockJwksRepository()),
     });
 
     // when
@@ -45,17 +58,16 @@ describe("createSaleorInstall", () => {
     // given
     const configRepo = createMockAppConfigRepository();
     const install = createSaleorInstall({
-      appConfigRepository: configRepo,
+      appConfigRepository: repoProvider(configRepo),
       fetchAppId: okAppId("app-123"),
-      jwksRepository: createMockJwksRepository(),
+      jwksRepository: jwksProvider(createMockJwksRepository()),
     });
-    const ctx = createTestContext();
 
     // when
-    await install(INPUT, ctx);
+    await install(INPUT, createTestContext());
 
     // then
-    const saved = await configRepo.get(INPUT.saleorDomain, ctx);
+    const saved = await configRepo.get(INPUT.saleorDomain);
     expect(saved.isOk()).toBe(true);
     expect(saved._unsafeUnwrap()).toEqual({
       saleorDomain: INPUT.saleorDomain,
@@ -68,9 +80,9 @@ describe("createSaleorInstall", () => {
   it("returns SALEOR_INSTALL_DOMAIN_NOT_ALLOWED_ERROR when domain is not allowed", async () => {
     // given
     const install = createSaleorInstall({
-      appConfigRepository: createMockAppConfigRepository(),
+      appConfigRepository: repoProvider(createMockAppConfigRepository()),
       fetchAppId: okAppId("app-123"),
-      jwksRepository: createMockJwksRepository(),
+      jwksRepository: jwksProvider(createMockJwksRepository()),
     });
 
     // when
@@ -93,9 +105,9 @@ describe("createSaleorInstall", () => {
     const failingFetch: FetchSaleorAppId = async () =>
       err([{ code: "SALEOR_REQUEST_ERROR", message: "connection refused" }]);
     const install = createSaleorInstall({
-      appConfigRepository: createMockAppConfigRepository(),
+      appConfigRepository: repoProvider(createMockAppConfigRepository()),
       fetchAppId: failingFetch,
-      jwksRepository: createMockJwksRepository(),
+      jwksRepository: jwksProvider(createMockJwksRepository()),
     });
 
     // when
@@ -117,9 +129,9 @@ describe("createSaleorInstall", () => {
       delete: async () => ok(undefined),
     };
     const install = createSaleorInstall({
-      appConfigRepository: failingRepo,
+      appConfigRepository: repoProvider(failingRepo),
       fetchAppId: okAppId(),
-      jwksRepository: createMockJwksRepository(),
+      jwksRepository: jwksProvider(createMockJwksRepository()),
     });
 
     // when
@@ -135,12 +147,12 @@ describe("createSaleorInstall", () => {
 
   it("returns SALEOR_INSTALL_JWKS_PREFETCH_ERROR when jwks prefetch fails", async () => {
     // given
-    const failingJwks: JWKSRepository = {
+    const failingJwks: JWKSRepositoryProvider = () => ({
       get: async () => err([{ code: "JWKS_FETCH_ERROR", message: "fetch failed" }]),
       set: async () => ok(undefined),
-    };
+    });
     const install = createSaleorInstall({
-      appConfigRepository: createMockAppConfigRepository(),
+      appConfigRepository: repoProvider(createMockAppConfigRepository()),
       fetchAppId: okAppId(),
       jwksRepository: failingJwks,
     });

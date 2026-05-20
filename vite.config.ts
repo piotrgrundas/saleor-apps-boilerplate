@@ -47,6 +47,7 @@ export default defineConfig({
       "tooling/**",
       "**/*.generated.*",
       "**/generated.ts",
+      ".*/",
     ],
   },
   staged: {

@@ -3,7 +3,10 @@ import type { BlankEnv } from "hono/types";
 
 import type { SaleorWebhookHeaders } from "./schema";
 
-export type WebhookData<E extends { event: unknown }> = E;
+export type WebhookData<E extends { event: unknown }> = Exclude<
+  NonNullable<E["event"]>,
+  Record<PropertyKey, never>
+>;
 
 export type SaleorWebhookHandlerContext<
   WebhookEvent extends { event: unknown } = { event: unknown },

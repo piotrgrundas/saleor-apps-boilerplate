@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
-import { APP_CONFIG } from "@/apps/handler/config";
-import { container } from "@/apps/handler/di/container";
+import { APP_CONFIG } from "@/handler/config";
+import { container } from "@/handler/di/container";
 import { fetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
 import { saleorRegisterHeadersSchema } from "@/infrastructure/integrations/saleor/header/schema";
 import { createSaleorInstall } from "@/infrastructure/integrations/saleor/install/saleor-install";
@@ -54,8 +54,6 @@ routes.get("/manifest", (context) => {
       },
     ],
   };
-
-  context.get("logger").error("OH NOOO! SENTRY LAYER HELP!");
 
   return context.json(manifest);
 });

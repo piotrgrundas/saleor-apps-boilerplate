@@ -17,11 +17,17 @@ const VALID_HEADERS = {
 const VALID_BODY = JSON.stringify({ event: { id: "abc" } });
 
 describe("saleorWebhookValidationMiddleware", () => {
-  it("returns 200 when signature + headers + body are valid", async ({ joseAuthService }) => {
+  it("returns 200 when signature + headers + body are valid", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWSDetached = async () => ok(undefined);
     const app = createTestApp();
-    app.use("/webhook", saleorWebhookValidationMiddleware({ joseAuthService }));
+    app.use(
+      "/webhook",
+      saleorWebhookValidationMiddleware({ joseAuthService: joseAuthServiceProvider }),
+    );
     app.post("/webhook", (context) => context.text("ok"));
 
     // when
@@ -37,10 +43,13 @@ describe("saleorWebhookValidationMiddleware", () => {
     expect(response.status).toBe(200);
   });
 
-  it("returns 400 when required headers are missing", async ({ joseAuthService }) => {
+  it("returns 400 when required headers are missing", async ({ joseAuthServiceProvider }) => {
     // given
     const app = createTestApp();
-    app.use("/webhook", saleorWebhookValidationMiddleware({ joseAuthService }));
+    app.use(
+      "/webhook",
+      saleorWebhookValidationMiddleware({ joseAuthService: joseAuthServiceProvider }),
+    );
     app.post("/webhook", (context) => context.text("ok"));
 
     // when — only sending some headers
@@ -56,12 +65,18 @@ describe("saleorWebhookValidationMiddleware", () => {
     expect(response.status).toBe(400);
   });
 
-  it("returns 401 when JWS signature verification fails", async ({ joseAuthService }) => {
+  it("returns 401 when JWS signature verification fails", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWSDetached = async () =>
       err([{ code: "JWKS_FETCH_ERROR", message: "bad signature" }]);
     const app = createTestApp();
-    app.use("/webhook", saleorWebhookValidationMiddleware({ joseAuthService }));
+    app.use(
+      "/webhook",
+      saleorWebhookValidationMiddleware({ joseAuthService: joseAuthServiceProvider }),
+    );
     app.post("/webhook", (context) => context.text("ok"));
 
     // when
@@ -77,11 +92,17 @@ describe("saleorWebhookValidationMiddleware", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 400 when body envelope is invalid", async ({ joseAuthService }) => {
+  it("returns 400 when body envelope is invalid", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWSDetached = async () => ok(undefined);
     const app = createTestApp();
-    app.use("/webhook", saleorWebhookValidationMiddleware({ joseAuthService }));
+    app.use(
+      "/webhook",
+      saleorWebhookValidationMiddleware({ joseAuthService: joseAuthServiceProvider }),
+    );
     app.post("/webhook", (context) => context.text("ok"));
 
     // when — body missing `event` key

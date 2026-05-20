@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { container } from "@/apps/dashboard/di/container";
+import { container } from "@/dashboard/di/container";
 import {
   appSettingsSchema,
   tenantAppConfigSchema,
@@ -9,14 +9,15 @@ import { saleorDomainHeaderSchema } from "@/infrastructure/integrations/saleor/h
 import { BadRequestError, NotFoundError } from "@/lib/error/base";
 import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middleware";
 
-const { appConfigRepository } = container.items;
+const { appConfigRepository: appConfigProvider } = container.items;
 
 export const configurationRoutes = new Hono()
   .get("/", zodValidatorMiddleware("header", saleorDomainHeaderSchema), async (context) => {
     const { "saleor-domain": saleorDomain } = context.req.valid("header");
     const ctx = { logger: context.get("logger") };
+    const appConfigRepository = appConfigProvider(ctx);
 
-    const result = await appConfigRepository.get(saleorDomain, ctx);
+    const result = await appConfigRepository.get(saleorDomain);
 
     if (result.isErr()) {
       throw new BadRequestError(result.error[0]?.message ?? "Config error");
@@ -38,8 +39,9 @@ export const configurationRoutes = new Hono()
       const { "saleor-domain": saleorDomain } = context.req.valid("header");
       const settings = context.req.valid("json");
       const ctx = { logger: context.get("logger") };
+      const appConfigRepository = appConfigProvider(ctx);
 
-      const getResult = await appConfigRepository.get(saleorDomain, ctx);
+      const getResult = await appConfigRepository.get(saleorDomain);
 
       if (getResult.isErr()) {
         throw new BadRequestError(getResult.error[0]?.message ?? "Config error");
@@ -50,7 +52,7 @@ export const configurationRoutes = new Hono()
       }
 
       const updated = { ...getResult.value, settings };
-      const setResult = await appConfigRepository.set({ saleorDomain, config: updated }, ctx);
+      const setResult = await appConfigRepository.set({ saleorDomain, config: updated });
 
       if (setResult.isErr()) {
         throw new BadRequestError(setResult.error[0]?.message ?? "Config error");

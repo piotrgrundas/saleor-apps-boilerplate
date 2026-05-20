@@ -67,7 +67,7 @@ export const buildServerConfig = (app: AppEntry, options: ServerBuildOptions) =>
       output: { entryFileNames: "[name].js" },
     },
   },
-  ssr: { target: "node" as const, noExternal: true },
+  ssr: { target: "node" as const, noExternal: true as const },
 });
 
 export async function buildServer(app: AppEntry, options: ServerBuildOptions) {
@@ -81,12 +81,21 @@ export async function buildClient(app: AppEntry, options: { minify: boolean; nod
   await viteBuild({
     ...SHARED,
     plugins: [react() as any],
-    define: { "process.env.NODE_ENV": JSON.stringify(options.nodeEnv) },
+    /**
+     * `global: "globalThis"` polyfills Node-style `global` references that
+     * some browser-published SDKs (e.g. `@saleor/app-sdk`) still emit. Without
+     * it the bundle throws `ReferenceError: global is not defined` on load.
+     */
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(options.nodeEnv),
+      global: "globalThis",
+    },
     build: {
       outDir,
       emptyOutDir: true,
       minify: options.minify ? "esbuild" : false,
       cssCodeSplit: false,
+      watch: options.nodeEnv === "development" ? {} : null,
       rollupOptions: {
         input: app.entryPath,
         output: {

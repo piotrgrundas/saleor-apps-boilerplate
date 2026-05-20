@@ -1,3 +1,4 @@
+import "dotenv/config";
 import type { IGraphQLConfig } from "graphql-config";
 
 const saleorUrl = process.env.SALEOR_URL ?? "https://your-store.saleor.cloud";

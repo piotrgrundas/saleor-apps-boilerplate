@@ -3,8 +3,8 @@ import { err, ok } from "neverthrow";
 import type { Context } from "@/domain/context";
 import type { AsyncResult } from "@/domain/errors/result";
 import type { SaleorInstallErrorCode } from "@/domain/errors/scopes/saleor-install";
-import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
-import type { JWKSRepository } from "@/domain/ports/jwks-repository";
+import type { AppConfigRepositoryProvider } from "@/domain/ports/app-config-repository";
+import type { JWKSRepositoryProvider } from "@/domain/ports/jwks-repository";
 import type { FetchSaleorAppId } from "@/infrastructure/integrations/saleor/client/fetch-saleor-app-id";
 import { isDomainAllowed } from "@/lib/utils/allowlist";
 
@@ -16,14 +16,16 @@ export type SaleorInstallInput = {
 };
 
 type Deps = {
-  appConfigRepository: AppConfigRepository;
+  appConfigRepository: AppConfigRepositoryProvider;
   fetchAppId: FetchSaleorAppId;
-  jwksRepository: JWKSRepository;
+  jwksRepository: JWKSRepositoryProvider;
 };
 
 export const createSaleorInstall =
-  ({ appConfigRepository, fetchAppId, jwksRepository }: Deps) =>
+  ({ appConfigRepository: appConfigProvider, fetchAppId, jwksRepository: jwksProvider }: Deps) =>
   async (input: SaleorInstallInput, ctx: Context): AsyncResult<void, SaleorInstallErrorCode> => {
+    const appConfigRepository = appConfigProvider(ctx);
+    const jwksRepository = jwksProvider(ctx);
     const { saleorDomain, saleorApiUrl, authToken, allowedDomains } = input;
 
     if (!isDomainAllowed(saleorDomain, allowedDomains)) {
@@ -54,13 +56,10 @@ export const createSaleorInstall =
 
     const appId = appIdResult.value;
 
-    const saveResult = await appConfigRepository.set(
-      {
-        saleorDomain,
-        config: { saleorDomain, authToken, saleorAppId: appId, saleorApiUrl },
-      },
-      ctx,
-    );
+    const saveResult = await appConfigRepository.set({
+      saleorDomain,
+      config: { saleorDomain, authToken, saleorAppId: appId, saleorApiUrl },
+    });
     if (saveResult.isErr()) {
       ctx.logger.error("Failed to save app config", {
         saleorDomain,
@@ -75,7 +74,7 @@ export const createSaleorInstall =
       ]);
     }
 
-    const jwksResult = await jwksRepository.get({ issuer: saleorApiUrl, forceRefresh: true }, ctx);
+    const jwksResult = await jwksRepository.get({ issuer: saleorApiUrl, forceRefresh: true });
     if (jwksResult.isErr()) {
       ctx.logger.error("Failed to prefetch JWKS keys", {
         saleorDomain,

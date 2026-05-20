@@ -29,64 +29,117 @@ Rule: if it varies per call → `Context`. If it's bound once for the consumer's
 
 ## Port shape
 
-Every fallible method takes `(input, ctx: Context)`:
+Port methods are **ctx-free**. Each port pairs with a `<Port>Provider = (ctx) => Port` type that the consumer calls to obtain a request-bound instance.
 
 ```typescript
 // src/domain/ports/app-config-repository.ts
 export type AppConfigRepository = {
-  get(saleorDomain: string, ctx: Context): AsyncResult<SaleorAppConfig | null, AppConfigErrorCode>;
+  get(saleorDomain: string): AsyncResult<SaleorAppConfig | null, AppConfigErrorCode>;
   set(
     input: { saleorDomain: string; config: SaleorAppConfig },
-    ctx: Context,
   ): AsyncResult<void, AppConfigErrorCode>;
-  delete(saleorDomain: string, ctx: Context): AsyncResult<void, AppConfigErrorCode>;
+  delete(saleorDomain: string): AsyncResult<void, AppConfigErrorCode>;
 };
+
+export type AppConfigRepositoryProvider = (ctx: Context) => AppConfigRepository;
 ```
 
-Reserve the slot now, even if a method doesn't use `ctx` today. Avoids signature retrofit later.
+Why ctx isn't a method param: per-call ctx threading is noisy without value (ctx rarely varies within a request). The Provider captures ctx once per request — adapter methods use `ctx.logger` from closure, no signature drag.
 
 ## Adapter shape
 
-Adapter uses `ctx.logger` directly. No logger in factory opts:
+Two-phase factory. Outer factory runs at DI boot (once per container), inner closure runs per request.
 
 ```typescript
 export const createAwsSecretManagerAppConfigRepository = (
   options: AwsSecretManagerOptions,
-): AppConfigRepository => ({
-  async get(saleorDomain, ctx) {
-    ctx.logger.debug("reading app config", { saleorDomain });
+): AppConfigRepositoryProvider => {
+  const client = new SecretsManagerClient();          // ← boot-time, cached
+
+  return (ctx) => ({                                    // ← per-request, ctx bound
+    async get(saleorDomain) {
+      ctx.logger.debug("reading app config", { saleorDomain });
+      // ...
+      if (failure) {
+        ctx.logger.error("failed to read", { cause });
+        return err([{ code: "APP_CONFIG_READ_ERROR", ... }]);
+      }
+      return ok(value);
+    },
     // ...
-    if (failure) {
-      ctx.logger.error("failed to read", { cause });
-      return err([{ code: "APP_CONFIG_READ_ERROR", ... }]);
-    }
-    return ok(value);
-  },
-  // ...
-});
+  });
+};
 ```
 
-Adapter logs carry request context because `ctx.logger` is the request-scoped logger constructed at the boundary.
+Adapter logs carry request context because `ctx.logger` is the request-scoped logger constructed at the boundary — captured by the inner closure once.
 
-## Use-case / procedure shape
+Heavy state (SDK clients, connection pools, config validation) lives in the outer factory body. Each request reuses the cached client; only the per-request closure (object literal) allocates.
 
-`Deps` drops `logger`. Use-case factory's returned function takes `(input, ctx)`:
+## Procedure shape
+
+`Deps` drops `logger`, holds **Providers**. Procedures (multi-step files under `infrastructure/integrations/<vendor>/`) take positional `(input, ctx)`, bind providers internally.
 
 ```typescript
 type Deps = {
-  appConfigRepository: AppConfigRepository;
+  appConfigRepository: AppConfigRepositoryProvider;
   fetchAppId: FetchSaleorAppId;
-  jwksRepository: JWKSRepository;
+  jwksRepository: JWKSRepositoryProvider;
 };
 
 export const createSaleorInstall =
-  ({ appConfigRepository, fetchAppId, jwksRepository }: Deps) =>
+  ({
+    appConfigRepository: appConfigProvider,
+    fetchAppId,
+    jwksRepository: jwksProvider,
+  }: Deps) =>
   async (input: SaleorInstallInput, ctx: Context): AsyncResult<void, SaleorInstallErrorCode> => {
+    const appConfigRepository = appConfigProvider(ctx);   // bind
+    const jwksRepository = jwksProvider(ctx);
+
     ctx.logger.info("installing...");
     const appIdResult = await fetchAppId(input, ctx);
+    if (appIdResult.isErr()) return err(...);
+
+    const saveResult = await appConfigRepository.set({ saleorDomain, config });  // no ctx
     // ...
   };
 ```
+
+## Use-case shape
+
+`Deps` holds **Providers**. Use-cases take single object `{ ctx, ...input }`. Bind providers at top.
+
+```typescript
+type Deps = {
+  catalogue: CatalogueProvider;
+  storage: StorageProvider;
+};
+
+export const generateFeedUseCase =
+  ({ catalogue: catalogueProvider, storage: storageProvider }: Deps) =>
+  async ({ ctx }: { ctx: Context }): AsyncResult<Summary, never> => {
+    const catalogue = catalogueProvider(ctx);    // bind once
+    const storage = storageProvider(ctx);
+
+    ctx.logger.info("generating feed");
+    await catalogue.fetchPage({ ... });            // no ctx in method calls
+    await storage.put({ ... });
+    // ...
+  };
+
+// inputful variant
+export const regenerateFeedUseCase =
+  ({ catalogue: catalogueProvider, storage: storageProvider }: Deps) =>
+  async ({
+    ctx,
+    channelSlugs,
+  }: { channelSlugs?: string[]; ctx: Context }): AsyncResult<...> => {
+    const catalogue = catalogueProvider(ctx);
+    // ...
+  };
+```
+
+Caller: `useCase({ ctx, ...input })`. Void input → `useCase({ ctx })`. Never `useCase(undefined, ctx)`.
 
 ## Plain function shape
 
@@ -107,8 +160,14 @@ Route handler / lambda entry reads request-scoped data (typically the logger tha
 // route handler
 async (context) => {
   const ctx = { logger: context.get("logger") };
-  const result = await saleorInstall(input, ctx);
-  // ...
+
+  // procedure: positional (input, ctx)
+  const installResult = await saleorInstall(input, ctx);
+
+  // use-case: single object { ctx, ...input }
+  const feedResult = await container.items.generateFeedUseCase({ ctx });
+  // or with input:
+  // await container.items.regenerateFeedUseCase({ ctx, channelSlugs: ["pl"] });
 };
 ```
 

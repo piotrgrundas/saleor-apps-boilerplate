@@ -14,7 +14,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node", "react", "react-dom"],
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./src/*", "./src/apps/*"],
       "@/constants": ["./constants.ts"]
     }
   },

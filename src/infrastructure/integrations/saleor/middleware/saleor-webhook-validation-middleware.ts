@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 
-import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
+import type { JoseAuthServiceProvider } from "@/domain/ports/jose-auth-service";
 import {
   saleorWebhookHeadersSchema,
   webhookDataSchema,
@@ -26,9 +26,9 @@ import { zodValidatorMiddleware } from "@/lib/middleware/zod-validator-middlewar
  *   );
  */
 export function saleorWebhookValidationMiddleware({
-  joseAuthService,
+  joseAuthService: joseAuthServiceProvider,
 }: {
-  joseAuthService: JoseAuthService;
+  joseAuthService: JoseAuthServiceProvider;
 }): MiddlewareHandler {
   const verify = createMiddleware(async (context, next) => {
     const headers = context.req.valid("header" as never) as {
@@ -38,15 +38,13 @@ export function saleorWebhookValidationMiddleware({
 
     const payload = await context.req.text();
     const ctx = { logger: context.get("logger") };
+    const joseAuthService = joseAuthServiceProvider(ctx);
 
-    const result = await joseAuthService.verifyJWSDetached(
-      {
-        jws: headers["saleor-signature"],
-        payload,
-        issuer: headers["saleor-api-url"],
-      },
-      ctx,
-    );
+    const result = await joseAuthService.verifyJWSDetached({
+      jws: headers["saleor-signature"],
+      payload,
+      issuer: headers["saleor-api-url"],
+    });
 
     if (result.isErr()) {
       throw new UnauthorizedError(result.error[0]?.message ?? "Invalid webhook signature");

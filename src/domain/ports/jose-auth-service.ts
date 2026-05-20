@@ -13,18 +13,24 @@ export type JWTPayload = {
 };
 
 export type JoseAuthService = {
-  verifyJWT(
-    opts: { token: string; issuer: string; forceRefresh?: boolean },
-    ctx: Context,
-  ): AsyncResult<JWTPayload, JwtErrorCode>;
+  verifyJWT(opts: {
+    token: string;
+    issuer: string;
+    forceRefresh?: boolean;
+  }): AsyncResult<JWTPayload, JwtErrorCode>;
 
-  verifyJWS(
-    opts: { jws: string; issuer: string; forceRefresh?: boolean },
-    ctx: Context,
-  ): AsyncResult<string, JwksErrorCode>;
+  verifyJWS(opts: {
+    jws: string;
+    issuer: string;
+    forceRefresh?: boolean;
+  }): AsyncResult<string, JwksErrorCode>;
 
-  verifyJWSDetached(
-    opts: { jws: string; payload: string; issuer: string; forceRefresh?: boolean },
-    ctx: Context,
-  ): AsyncResult<void, JwksErrorCode>;
+  verifyJWSDetached(opts: {
+    jws: string;
+    payload: string;
+    issuer: string;
+    forceRefresh?: boolean;
+  }): AsyncResult<void, JwksErrorCode>;
 };
+
+export type JoseAuthServiceProvider = (ctx: Context) => JoseAuthService;

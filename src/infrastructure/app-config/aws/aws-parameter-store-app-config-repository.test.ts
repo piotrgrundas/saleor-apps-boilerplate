@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, vi } from "vite-plus/test";
 
+import type { AppConfigRepositoryOptions } from "@/domain/ports/app-config-repository";
 import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
 import { it } from "@/lib/test/it";
 import { createTestContext } from "@/lib/test/mock";
@@ -36,9 +37,12 @@ const TEST_CONFIG: SaleorAppConfig = {
   saleorApiUrl: "https://test.saleor.cloud/graphql/",
 };
 
-const OPTIONS = {
+const OPTIONS: AppConfigRepositoryOptions = {
   configPath: "/saleor/app-config",
 };
+
+const buildRepo = (opts: AppConfigRepositoryOptions = OPTIONS) =>
+  createAwsParameterStoreAppConfigRepository(opts)(createTestContext());
 
 beforeEach(() => {
   sendMock.mockReset();
@@ -50,10 +54,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
       // given
       const { ParameterNotFound } = await import("@aws-sdk/client-ssm");
       sendMock.mockRejectedValueOnce(new ParameterNotFound({ $metadata: {}, message: "" }));
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.get("missing.domain", createTestContext());
+      const result = await repo.get("missing.domain");
 
       // then
       expect(result.isOk()).toBe(true);
@@ -63,10 +67,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("returns config for existing domain", async () => {
       // given
       sendMock.mockResolvedValueOnce({ Parameter: { Value: JSON.stringify(TEST_CONFIG) } });
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.get(TEST_CONFIG.saleorDomain, createTestContext());
+      const result = await repo.get(TEST_CONFIG.saleorDomain);
 
       // then
       expect(result.isOk()).toBe(true);
@@ -76,10 +80,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("requests parameter with WithDecryption=true", async () => {
       // given
       sendMock.mockResolvedValueOnce({ Parameter: { Value: JSON.stringify(TEST_CONFIG) } });
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      await repo.get(TEST_CONFIG.saleorDomain, createTestContext());
+      await repo.get(TEST_CONFIG.saleorDomain);
 
       // then
       expect(sendMock).toHaveBeenCalledTimes(1);
@@ -91,13 +95,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("normalizes parameter path without leading slash", async () => {
       // given
       sendMock.mockResolvedValueOnce({ Parameter: { Value: JSON.stringify(TEST_CONFIG) } });
-      const repo = createAwsParameterStoreAppConfigRepository({
-        ...OPTIONS,
-        configPath: "saleor-app-config",
-      });
+      const repo = buildRepo({ ...OPTIONS, configPath: "saleor-app-config" });
 
       // when
-      await repo.get(TEST_CONFIG.saleorDomain, createTestContext());
+      await repo.get(TEST_CONFIG.saleorDomain);
 
       // then
       const call = sendMock.mock.calls[0][0];
@@ -107,13 +108,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("strips trailing slash from parameter path", async () => {
       // given
       sendMock.mockResolvedValueOnce({ Parameter: { Value: JSON.stringify(TEST_CONFIG) } });
-      const repo = createAwsParameterStoreAppConfigRepository({
-        ...OPTIONS,
-        configPath: "/saleor/app-config/",
-      });
+      const repo = buildRepo({ ...OPTIONS, configPath: "/saleor/app-config/" });
 
       // when
-      await repo.get(TEST_CONFIG.saleorDomain, createTestContext());
+      await repo.get(TEST_CONFIG.saleorDomain);
 
       // then
       const call = sendMock.mock.calls[0][0];
@@ -123,10 +121,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("returns null when value missing", async () => {
       // given
       sendMock.mockResolvedValueOnce({ Parameter: { Value: undefined } });
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.get("any.domain", createTestContext());
+      const result = await repo.get("any.domain");
 
       // then
       expect(result.isOk()).toBe(true);
@@ -136,10 +134,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("returns APP_CONFIG_READ_ERROR when client throws", async () => {
       // given
       sendMock.mockRejectedValueOnce(new Error("access denied"));
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.get("any.domain", createTestContext());
+      const result = await repo.get("any.domain");
 
       // then
       expect(result.isErr()).toBe(true);
@@ -152,13 +150,13 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("writes parameter as SecureString with Overwrite=true", async () => {
       // given
       sendMock.mockResolvedValueOnce({});
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.set(
-        { saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG },
-        createTestContext(),
-      );
+      const result = await repo.set({
+        saleorDomain: TEST_CONFIG.saleorDomain,
+        config: TEST_CONFIG,
+      });
 
       // then
       expect(result.isOk()).toBe(true);
@@ -173,16 +171,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("includes KeyId when kmsKeyId provided", async () => {
       // given
       sendMock.mockResolvedValueOnce({});
-      const repo = createAwsParameterStoreAppConfigRepository({
-        ...OPTIONS,
-        kmsKeyId: "alias/custom-key",
-      });
+      const repo = buildRepo({ ...OPTIONS, kmsKeyId: "alias/custom-key" });
 
       // when
-      await repo.set(
-        { saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG },
-        createTestContext(),
-      );
+      await repo.set({ saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG });
 
       // then
       const call = sendMock.mock.calls[0][0];
@@ -192,13 +184,13 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("returns APP_CONFIG_WRITE_ERROR when put fails", async () => {
       // given
       sendMock.mockRejectedValueOnce(new Error("write failed"));
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.set(
-        { saleorDomain: TEST_CONFIG.saleorDomain, config: TEST_CONFIG },
-        createTestContext(),
-      );
+      const result = await repo.set({
+        saleorDomain: TEST_CONFIG.saleorDomain,
+        config: TEST_CONFIG,
+      });
 
       // then
       expect(result.isErr()).toBe(true);
@@ -210,10 +202,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("deletes parameter by name", async () => {
       // given
       sendMock.mockResolvedValueOnce({});
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.delete(TEST_CONFIG.saleorDomain, createTestContext());
+      const result = await repo.delete(TEST_CONFIG.saleorDomain);
 
       // then
       expect(result.isOk()).toBe(true);
@@ -225,10 +217,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
       // given
       const { ParameterNotFound } = await import("@aws-sdk/client-ssm");
       sendMock.mockRejectedValueOnce(new ParameterNotFound({ $metadata: {}, message: "" }));
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.delete("missing.domain", createTestContext());
+      const result = await repo.delete("missing.domain");
 
       // then
       expect(result.isOk()).toBe(true);
@@ -237,10 +229,10 @@ describe("createAwsParameterStoreAppConfigRepository", () => {
     it("returns APP_CONFIG_DELETE_ERROR when delete fails", async () => {
       // given
       sendMock.mockRejectedValueOnce(new Error("delete failed"));
-      const repo = createAwsParameterStoreAppConfigRepository(OPTIONS);
+      const repo = buildRepo();
 
       // when
-      const result = await repo.delete(TEST_CONFIG.saleorDomain, createTestContext());
+      const result = await repo.delete(TEST_CONFIG.saleorDomain);
 
       // then
       expect(result.isErr()).toBe(true);

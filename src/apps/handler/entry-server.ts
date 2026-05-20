@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
 import { requestId } from "hono/request-id";
 
-import { container } from "@/apps/handler/di/container";
+import { container } from "@/handler/di/container";
 import { createErrorHandler } from "@/lib/error/handler";
 import { createAssetsMiddleware } from "@/lib/middleware/assets-middleware";
 import { healthCheckMiddleware } from "@/lib/middleware/health-check-middleware";

@@ -4,7 +4,7 @@ import { hc } from "hono/client";
 import { useForm } from "react-hook-form";
 import { useLoaderData } from "react-router-dom";
 
-import type { ConfigurationRoutes } from "@/apps/dashboard/api/rest/configuration/routes";
+import type { ConfigurationRoutes } from "@/dashboard/api/rest/configuration/routes";
 import {
   type AppSettings,
   appSettingsSchema,

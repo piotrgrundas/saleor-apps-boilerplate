@@ -1,6 +1,6 @@
 ---
 name: code-style-guidelines
-description: Project-local code style rules that apply regardless of whether the formatter or linter catches them. Covers import grouping, function argument shapes (single destructured object beyond one param), and literal-over-jargon naming. Use whenever writing or modifying any `.ts` / `.tsx` file. Triggers: "add an import", "fix import order", "clean up this file", "the imports look messy", designing a function/method/port signature, naming a variable / test / log message, any new module creation, any code review of style concerns the formatter doesn't catch.
+description: Project-local code style rules that apply regardless of whether the formatter or linter catches them. Covers import grouping, function argument shapes (single destructured object beyond one param), literal-over-jargon naming, and comment form by length (`//` for single-line, `/** */` for multi-line). Use whenever writing or modifying any `.ts` / `.tsx` file. Triggers: "add an import", "fix import order", "clean up this file", "the imports look messy", designing a function/method/port signature, naming a variable / test / log message, writing/converting any comment, any new module creation, any code review of style concerns the formatter doesn't catch.
 ---
 
 # Code style guidelines
@@ -16,6 +16,7 @@ Style is the source of truth. Tooling may or may not enforce a given rule — ap
 | Import grouping | 3 groups (external → `@/...` → relative), single blank line between, alphabetical within        | [IMPORTS.md](IMPORTS.md)             |
 | Function args   | 2+ params → single destructured object; 1 param → positional. Same rule for class constructors. | [FUNCTION-ARGS.md](FUNCTION-ARGS.md) |
 | Naming          | Literal mechanism, not jargon / metaphors / vendor terms outside infra                          | [NAMING.md](NAMING.md)               |
+| Comments        | Single-line → `// text`; multi-line (2+ lines) → `/** ... */` block. No mixing.                 | [COMMENTS.md](COMMENTS.md)           |
 
 ## Universal: no file extensions in imports
 
@@ -35,6 +36,7 @@ import { foo } from "./bar.ts";
 - Writing/modifying imports, or seeing imports in code review → [IMPORTS.md](IMPORTS.md)
 - Defining a function, method, port signature, factory, or class constructor → [FUNCTION-ARGS.md](FUNCTION-ARGS.md)
 - Naming any identifier, test description, log message, or comment → [NAMING.md](NAMING.md)
+- Writing or converting any comment, or seeing JSDoc in source → [COMMENTS.md](COMMENTS.md)
 
 ## Workflow
 

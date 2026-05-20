@@ -29,6 +29,7 @@ const config: CodegenConfig = {
         enumsAsTypes: true,
         futureProofEnums: true,
         documentMode: "string",
+        dedupeOperationSuffix: true,
       },
     },
     // Custom GraphQL API types (handler app)

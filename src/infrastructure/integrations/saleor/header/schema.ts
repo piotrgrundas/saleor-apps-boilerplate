@@ -5,9 +5,11 @@ export const saleorDomainHeaderSchema = z.object({
 });
 
 export const saleorApiUrlHeaderSchema = z.object({
-  "saleor-api-url": z.string().url("Invalid saleor-api-url header"),
+  "saleor-api-url": z.url("Invalid saleor-api-url header"),
 });
 
-export const saleorRegisterHeadersSchema = saleorDomainHeaderSchema.merge(saleorApiUrlHeaderSchema);
+export const saleorRegisterHeadersSchema = saleorDomainHeaderSchema.extend(
+  saleorApiUrlHeaderSchema.shape,
+);
 
 export type SaleorRegisterHeaders = z.infer<typeof saleorRegisterHeadersSchema>;

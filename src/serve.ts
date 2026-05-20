@@ -19,9 +19,7 @@ const appNames = readdirSync(appsDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
 
-logger.info(
-  `Discovered apps, available under: ${appNames.map((app) => `/${app}`).join(", ")} paths.`,
-);
+logger.info(`Discovered apps: ${appNames.join(", ")}.`);
 
 for (const name of appNames) {
   // Each app is mounted at /<name>; align BASE_PATH so app-internal
@@ -35,6 +33,8 @@ for (const name of appNames) {
    * Hono server app is exported under default export.
    */
   if (!mod.default) continue;
+
+  logger.info(`App ${name} mounted under /${name}`);
 
   app.route("/", mod.default);
 }

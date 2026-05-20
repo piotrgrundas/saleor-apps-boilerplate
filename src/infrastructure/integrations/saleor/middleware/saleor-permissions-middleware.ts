@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 
-import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
+import type { JoseAuthServiceProvider } from "@/domain/ports/jose-auth-service";
 import { PermissionEnum } from "@/infrastructure/integrations/saleor/graphql/schema";
 import { ForbiddenError, UnauthorizedError } from "@/lib/error/base";
 
@@ -31,10 +31,10 @@ export type SaleorPermission = PermissionEnum;
  *   );
  */
 export function saleorPermissionsMiddleware({
-  joseAuthService,
+  joseAuthService: joseAuthServiceProvider,
   required,
 }: {
-  joseAuthService: JoseAuthService;
+  joseAuthService: JoseAuthServiceProvider;
   required: SaleorPermission[];
 }): MiddlewareHandler {
   return createMiddleware(async (context, next) => {
@@ -46,7 +46,8 @@ export function saleorPermissionsMiddleware({
     if (!apiUrl) throw new UnauthorizedError(`Missing ${API_URL_HEADER} header`);
 
     const ctx = { logger: context.get("logger") };
-    const verified = await joseAuthService.verifyJWT({ token, issuer: apiUrl }, ctx);
+    const joseAuthService = joseAuthServiceProvider(ctx);
+    const verified = await joseAuthService.verifyJWT({ token, issuer: apiUrl });
 
     if (verified.isErr()) {
       throw new UnauthorizedError(verified.error[0]?.message ?? "Invalid Saleor token");

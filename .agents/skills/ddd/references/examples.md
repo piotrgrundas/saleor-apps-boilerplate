@@ -79,10 +79,11 @@ export const ErrorCodes = [
 
 ## 3. Ports — `src/domain/ports/*.ts`
 
-TS types, not abstract classes.
+TS types, not abstract classes. Each port pairs with a `<Port>Provider = (ctx) => Port` type. Port methods are ctx-free.
 
 ```typescript
 // src/domain/ports/sitemap-store.ts
+import type { Context } from "@/domain/context.ts";
 import type { AsyncResult } from "@/domain/errors/result.ts";
 import type { SitemapStoreErrorCode } from "@/domain/errors/scopes/sitemap-store.ts";
 
@@ -92,10 +93,13 @@ export type SitemapStore = {
     body: Uint8Array;
   }): AsyncResult<string, SitemapStoreErrorCode>;
 };
+
+export type SitemapStoreProvider = (ctx: Context) => SitemapStore;
 ```
 
 ```typescript
 // src/domain/ports/product-catalogue.ts
+import type { Context } from "@/domain/context.ts";
 import type { AsyncResult } from "@/domain/errors/result.ts";
 import type { ProductCatalogueErrorCode } from "@/domain/errors/scopes/product-catalogue.ts";
 
@@ -104,22 +108,25 @@ export type ProductRef = { slug: string; updatedAt: Date };
 export type ProductCatalogue = {
   listForChannel(channelSlug: string): AsyncResult<ProductRef[], ProductCatalogueErrorCode>;
 };
+
+export type ProductCatalogueProvider = (ctx: Context) => ProductCatalogue;
 ```
 
-## 4. Adapters — `src/infrastructure/<port>/<vendor>-<port>.ts`
+## 4. Adapters — `src/infrastructure/<port>/<vendor>/<vendor>-<port>.ts`
 
-Factory functions returning port-shaped objects.
+Two-phase factory: outer runs at DI boot (heavy state), inner runs per request (ctx binding).
 
 ```typescript
-// src/infrastructure/sitemap-store/s3-sitemap-store.ts
+// src/infrastructure/sitemap-store/s3/s3-sitemap-store.ts
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { err, ok } from "neverthrow";
 
-import type { SitemapStore } from "@/domain/ports/sitemap-store.ts";
+import type { SitemapStoreProvider } from "@/domain/ports/sitemap-store.ts";
 
-export const createS3SitemapStore = (bucket: string): SitemapStore => {
-  const client = new S3Client();
-  return {
+export const createS3SitemapStore = (bucket: string): SitemapStoreProvider => {
+  const client = new S3Client();           // ← boot-time, cached
+
+  return (ctx) => ({                        // ← per-request, ctx bound
     async upload({ channelSlug, body }) {
       try {
         await client.send(
@@ -131,6 +138,7 @@ export const createS3SitemapStore = (bucket: string): SitemapStore => {
         );
         return ok(`https://${bucket}.s3.amazonaws.com/sitemaps/${channelSlug}.xml`);
       } catch (cause) {
+        ctx.logger.error("Sitemap upload failed", { channelSlug, cause });
         return err([
           {
             code: "SITEMAP_STORE_UPLOAD_ERROR",
@@ -140,11 +148,11 @@ export const createS3SitemapStore = (bucket: string): SitemapStore => {
         ]);
       }
     },
-  };
+  });
 };
 ```
 
-`createSaleorProductCatalogue` follows the same shape — see `src/infrastructure/catalogue/saleor/saleor-catalogue.ts` for a live reference.
+`createSaleorProductCatalogue` follows the same shape — see `src/infrastructure/integrations/saleor/catalogue/saleor-catalogue.ts` for a live reference.
 
 ## 5. Use-case — `src/application/generate-sitemap-use-case.ts`
 
@@ -153,21 +161,20 @@ Factory function returning a curried handler.
 ```typescript
 import { err, ok } from "neverthrow";
 
+import type { Context } from "@/domain/context.ts";
 import type { AsyncResult } from "@/domain/errors/result.ts";
 import type { GenerateSitemapErrorCode } from "@/domain/errors/scopes/generate-sitemap.ts";
 import type { ProductCatalogueErrorCode } from "@/domain/errors/scopes/product-catalogue.ts";
 import type { SitemapStoreErrorCode } from "@/domain/errors/scopes/sitemap-store.ts";
+import type { ProductCatalogueProvider } from "@/domain/ports/product-catalogue.ts";
+import type { SitemapStoreProvider } from "@/domain/ports/sitemap-store.ts";
 import { newSitemap, type Sitemap } from "@/domain/sitemap/sitemap.ts";
-import type { ProductCatalogue } from "@/domain/ports/product-catalogue.ts";
-import type { SitemapStore } from "@/domain/ports/sitemap-store.ts";
-import type { LoggingProvider } from "@/lib/logging/types.ts";
 
 import { buildSitemapXml } from "./sitemap/build-xml.ts";
 
 type Deps = {
-  catalogue: ProductCatalogue;
-  store: SitemapStore;
-  logger: LoggingProvider;
+  catalogue: ProductCatalogueProvider;
+  store: SitemapStoreProvider;
 };
 
 export type GenerateSitemapErrors =
@@ -176,9 +183,15 @@ export type GenerateSitemapErrors =
   | GenerateSitemapErrorCode;
 
 export const generateSitemapUseCase =
-  ({ catalogue, store, logger }: Deps) =>
-  async ({ channelSlug }: { channelSlug: string }): AsyncResult<Sitemap, GenerateSitemapErrors> => {
-    logger.info("Generating sitemap.", { channelSlug });
+  ({ catalogue: catalogueProvider, store: storeProvider }: Deps) =>
+  async ({
+    ctx,
+    channelSlug,
+  }: { channelSlug: string; ctx: Context }): AsyncResult<Sitemap, GenerateSitemapErrors> => {
+    const catalogue = catalogueProvider(ctx);    // bind once
+    const store = storeProvider(ctx);
+
+    ctx.logger.info("Generating sitemap.", { channelSlug });
 
     const productsResult = await catalogue.listForChannel(channelSlug);
     if (productsResult.isErr()) return err(productsResult.error);
@@ -240,9 +253,8 @@ export const container = createGlobalContainer(APP_CONFIG)
   .add((ctx) => ({
     generateSitemapUseCase: () =>
       generateSitemapUseCase({
-        catalogue: ctx.productCatalogue,
-        store: ctx.sitemapStore,
-        logger: ctx.logger,
+        catalogue: ctx.productCatalogue,    // ProductCatalogueProvider
+        store: ctx.sitemapStore,             // SitemapStoreProvider
       }),
   }));
 ```
@@ -272,7 +284,8 @@ export const sitemapRoute = new Hono().post("/sitemaps", async (c) => {
     ]);
   }
 
-  const result = await container.items.generateSitemapUseCase(parsed.data);
+  const ctx = { logger: c.get("logger") };
+  const result = await container.items.generateSitemapUseCase({ ctx, ...parsed.data });
 
   return result.match(
     (sitemap) => c.json(sitemap),
@@ -298,27 +311,25 @@ The global `errorHandler` (registered via `app.onError(errorHandler)`) catches t
 
 ## 8. Test the use-case — `src/application/generate-sitemap.test.ts`
 
-Mock the ports as `MagicMock<PortType>()`, invoke the factory, then call the bound function.
+Mock ports as `MagicMock<PortType>()`, wrap as Providers via `asProvider`, invoke the factory, then call the bound function with `{ ctx, ...input }`.
 
 ```typescript
 import { ok } from "neverthrow";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, vi } from "vite-plus/test";
 
 import { generateSitemapUseCase } from "@/application/generate-sitemap-use-case.ts";
 import type { ProductCatalogue } from "@/domain/ports/product-catalogue.ts";
 import type { SitemapStore } from "@/domain/ports/sitemap-store.ts";
-import type { LoggingProvider } from "@/lib/logging/types.ts";
-import { MagicMock } from "@/lib/test/mock.ts";
+import { it } from "@/lib/test/it.ts";
+import { asProvider, createTestContext, MagicMock } from "@/lib/test/mock.ts";
 
 describe("generateSitemapUseCase", () => {
   let catalogue: ProductCatalogue;
   let store: SitemapStore;
-  let logger: LoggingProvider;
 
   beforeEach(() => {
     catalogue = MagicMock<ProductCatalogue>();
     store = MagicMock<SitemapStore>();
-    logger = MagicMock<LoggingProvider>();
   });
 
   it("should upload xml and return sitemap on success", async () => {
@@ -327,10 +338,13 @@ describe("generateSitemapUseCase", () => {
       ok([{ slug: "p1", updatedAt: new Date() }]),
     );
     vi.mocked(store.upload).mockResolvedValue(ok("https://cdn/sitemaps/uk.xml"));
-    const handle = generateSitemapUseCase({ catalogue, store, logger });
+    const handle = generateSitemapUseCase({
+      catalogue: asProvider(catalogue),
+      store: asProvider(store),
+    });
 
     // when
-    const result = await handle({ channelSlug: "uk" });
+    const result = await handle({ ctx: createTestContext(), channelSlug: "uk" });
 
     // then
     expect(result.isOk()).toBe(true);

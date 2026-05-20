@@ -38,9 +38,7 @@ describe("createGraphqlClient", () => {
     const client = createGraphqlClient(URL, { logger });
 
     // when
-    const result = await client.execute<{ user: { id: string; name: string } }>(document, {
-      variables: { id: "1" },
-    });
+    const result = await client.execute(document, { variables: { id: "1" } });
 
     // then
     expect(result.isOk()).toBe(true);

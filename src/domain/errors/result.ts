@@ -17,7 +17,7 @@ export type ErrResult<T> = T extends (...args: never) => Promise<Result<unknown,
 
 export const remapErrors = <T, From extends ErrorCode, To extends ErrorCode>(
   result: Result<T, Error<From>[]>,
-  shape: { code: To; message: string; details?: unknown },
+  shape: { code: To; message: string; details?: Record<string, unknown> },
 ): Result<T, Error<To>[]> => {
   if (result.isErr()) {
     return err([{ ...shape, details: { ...shape.details, cause: result.error } }]);

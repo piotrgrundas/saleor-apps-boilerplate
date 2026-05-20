@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z, ZodType } from "zod";
 
 /**
  * Formats Zod errors into a human-readable string.
@@ -11,3 +11,19 @@ export function formatZodErrors(error: z.ZodError): string {
     })
     .join("; ");
 }
+
+export const parseJSON = <T extends ZodType>(schema: T) =>
+  z
+    .string()
+    .transform((str, ctx) => {
+      try {
+        return JSON.parse(str);
+      } catch (error) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Invalid JSON - ${(error as Error).message}`,
+          fatal: true,
+        });
+      }
+    })
+    .pipe(schema);

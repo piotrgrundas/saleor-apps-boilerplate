@@ -198,14 +198,18 @@ Note: `container.items.startGenerationUseCase` is **already the bound function**
 If a use-case needs a per-call value that is NOT one of its DI deps (e.g. lambda's `getRemainingTimeInMillis` for budget checking), pass it as **input to the bound function**, not into the factory:
 
 ```typescript
-// Use-case factory closes over the static deps:
+// Use-case factory closes over the static deps. The bound function takes a
+// single object: per-call input fields + `ctx`.
 export const crawlChannelScopedUseCase = (deps: Deps, config: Config) =>
-  async (
-    { job, shouldContinue }: {
-      job: GenerationJob;
-      shouldContinue: () => boolean;
-    },
-  ): AsyncResult<...> => { /* ... */ };
+  async ({
+    ctx,
+    job,
+    shouldContinue,
+  }: {
+    job: GenerationJob;
+    shouldContinue: () => boolean;
+    ctx: Context;
+  }): AsyncResult<...> => { /* ... */ };
 
 // DI wires once:
 .add((ctx) => ({
@@ -213,9 +217,9 @@ export const crawlChannelScopedUseCase = (deps: Deps, config: Config) =>
     crawlChannelScopedUseCase({ ...sharedCrawlDeps(ctx), catalogue: ctx.productCatalogue }, PRODUCTS_CRAWL_CONFIG),
 }));
 
-// Boundary supplies the per-invocation value:
+// Boundary supplies the per-invocation values:
 const shouldContinue = () => context.getRemainingTimeInMillis() > APP_CONFIG.SAFETY_MS;
-await container.items.crawlProductsUseCase({ job: step.job, shouldContinue });
+await container.items.crawlProductsUseCase({ ctx, job: step.job, shouldContinue });
 ```
 
 Rule of thumb: if the value comes from a **port or static config**, it's a `Dep` (factory closure). If it comes from **the boundary's runtime invocation context**, it's an `Input` (function argument).

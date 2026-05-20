@@ -2,9 +2,12 @@ import { ok } from "neverthrow";
 import { vi } from "vite-plus/test";
 
 import type { Context } from "@/domain/context";
-import type { AppConfigRepository } from "@/domain/ports/app-config-repository";
-import type { JoseAuthService } from "@/domain/ports/jose-auth-service";
-import type { JWKSRepository } from "@/domain/ports/jwks-repository";
+import type {
+  AppConfigRepository,
+  AppConfigRepositoryProvider,
+} from "@/domain/ports/app-config-repository";
+import type { JoseAuthService, JoseAuthServiceProvider } from "@/domain/ports/jose-auth-service";
+import type { JWKSRepository, JWKSRepositoryProvider } from "@/domain/ports/jwks-repository";
 import type { Logger } from "@/domain/ports/logger";
 import type { SaleorAppConfig } from "@/infrastructure/integrations/saleor/app-config/schema";
 
@@ -62,6 +65,13 @@ export function createMockAppConfigRepository(
   };
 }
 
+export function createMockAppConfigRepositoryProvider(
+  initialConfigs: Record<string, SaleorAppConfig> = {},
+): AppConfigRepositoryProvider {
+  const repo = createMockAppConfigRepository(initialConfigs);
+  return () => repo;
+}
+
 export function createMockJwksRepository(): JWKSRepository {
   return {
     async get() {
@@ -71,6 +81,11 @@ export function createMockJwksRepository(): JWKSRepository {
       return ok(undefined);
     },
   };
+}
+
+export function createMockJwksRepositoryProvider(): JWKSRepositoryProvider {
+  const repo = createMockJwksRepository();
+  return () => repo;
 }
 
 export function createMockJoseAuthService(): JoseAuthService {
@@ -85,4 +100,9 @@ export function createMockJoseAuthService(): JoseAuthService {
       return ok(undefined);
     },
   };
+}
+
+export function createMockJoseAuthServiceProvider(): JoseAuthServiceProvider {
+  const svc = createMockJoseAuthService();
+  return () => svc;
 }

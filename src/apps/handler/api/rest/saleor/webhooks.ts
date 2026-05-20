@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { container } from "@/apps/handler/di/container";
+import { container } from "@/handler/di/container";
 import { saleorWebhookValidationMiddleware } from "@/infrastructure/integrations/saleor/middleware/saleor-webhook-validation-middleware";
 import type { SaleorWebhookHandlerContext } from "@/infrastructure/integrations/saleor/webhook/types";
 

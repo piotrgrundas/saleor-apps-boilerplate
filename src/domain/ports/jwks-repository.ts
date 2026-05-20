@@ -18,9 +18,8 @@ export type JWKSRepositoryOptions = {
 };
 
 export type JWKSRepository = {
-  get(
-    opts: { issuer: string; forceRefresh?: boolean },
-    ctx: Context,
-  ): AsyncResult<JsonWebKeySet, JwksErrorCode>;
-  set(opts: { issuer: string; jwks: JsonWebKeySet }, ctx: Context): AsyncResult<void>;
+  get(opts: { issuer: string; forceRefresh?: boolean }): AsyncResult<JsonWebKeySet, JwksErrorCode>;
+  set(opts: { issuer: string; jwks: JsonWebKeySet }): AsyncResult<void>;
 };
+
+export type JWKSRepositoryProvider = (ctx: Context) => JWKSRepository;

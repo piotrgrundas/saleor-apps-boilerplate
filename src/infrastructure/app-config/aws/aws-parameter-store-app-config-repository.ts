@@ -8,8 +8,8 @@ import {
 import { err, ok } from "neverthrow";
 
 import type {
-  AppConfigRepository,
   AppConfigRepositoryOptions,
+  AppConfigRepositoryProvider,
 } from "@/domain/ports/app-config-repository";
 import {
   saleorAppConfigSchema,
@@ -38,18 +38,15 @@ const buildParameterName = (configPath: string, saleorDomain: string) =>
 export const createAwsParameterStoreAppConfigRepository = ({
   configPath,
   kmsKeyId,
-}: AppConfigRepositoryOptions): AppConfigRepository => {
-  // Validate required AWS env vars at construction time so misconfiguration
-  // fails fast at boot rather than on first request. Region + credentials
-  // are resolved internally by `SSMClient`.
+}: AppConfigRepositoryOptions): AppConfigRepositoryProvider => {
   prepareConfig({
     name: "AwsParameterStoreAppConfigRepository",
     schema: awsConfigSchema,
   });
   const client = new SSMClient();
 
-  return {
-    async get(saleorDomain, ctx) {
+  return (ctx) => ({
+    async get(saleorDomain) {
       const name = buildParameterName(configPath, saleorDomain);
       try {
         const response = await client.send(
@@ -79,7 +76,7 @@ export const createAwsParameterStoreAppConfigRepository = ({
       }
     },
 
-    async set({ saleorDomain, config }, ctx) {
+    async set({ saleorDomain, config }) {
       const name = buildParameterName(configPath, saleorDomain);
       try {
         await client.send(
@@ -107,7 +104,7 @@ export const createAwsParameterStoreAppConfigRepository = ({
       }
     },
 
-    async delete(saleorDomain, ctx) {
+    async delete(saleorDomain) {
       const name = buildParameterName(configPath, saleorDomain);
       try {
         await client.send(new DeleteParameterCommand({ Name: name }));
@@ -129,7 +126,7 @@ export const createAwsParameterStoreAppConfigRepository = ({
         ]);
       }
     },
-  };
+  });
 };
 
 export type { SaleorAppConfig };

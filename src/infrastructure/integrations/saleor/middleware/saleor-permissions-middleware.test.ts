@@ -13,14 +13,17 @@ const VALID_HEADERS = {
 };
 
 describe("saleorPermissionsMiddleware", () => {
-  it("returns 200 when all required permissions are present", async ({ joseAuthService }) => {
+  it("returns 200 when all required permissions are present", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWT = async () => ok({ permissions: ["MANAGE_PRODUCTS"] });
     const app = createTestApp();
     app.use(
       "*",
       saleorPermissionsMiddleware({
-        joseAuthService,
+        joseAuthService: joseAuthServiceProvider,
         required: ["MANAGE_PRODUCTS"],
       }),
     );
@@ -35,10 +38,18 @@ describe("saleorPermissionsMiddleware", () => {
     expect(response.status).toBe(200);
   });
 
-  it("returns 401 when authorization-bearer header is missing", async ({ joseAuthService }) => {
+  it("returns 401 when authorization-bearer header is missing", async ({
+    joseAuthServiceProvider,
+  }) => {
     // given
     const app = createTestApp();
-    app.use("*", saleorPermissionsMiddleware({ joseAuthService, required: ["MANAGE_PRODUCTS"] }));
+    app.use(
+      "*",
+      saleorPermissionsMiddleware({
+        joseAuthService: joseAuthServiceProvider,
+        required: ["MANAGE_PRODUCTS"],
+      }),
+    );
     app.get("/admin", (context) => context.text("ok"));
 
     // when
@@ -53,10 +64,16 @@ describe("saleorPermissionsMiddleware", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 401 when saleor-api-url header is missing", async ({ joseAuthService }) => {
+  it("returns 401 when saleor-api-url header is missing", async ({ joseAuthServiceProvider }) => {
     // given
     const app = createTestApp();
-    app.use("*", saleorPermissionsMiddleware({ joseAuthService, required: ["MANAGE_PRODUCTS"] }));
+    app.use(
+      "*",
+      saleorPermissionsMiddleware({
+        joseAuthService: joseAuthServiceProvider,
+        required: ["MANAGE_PRODUCTS"],
+      }),
+    );
     app.get("/admin", (context) => context.text("ok"));
 
     // when
@@ -71,12 +88,21 @@ describe("saleorPermissionsMiddleware", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 401 when JWT verification fails", async ({ joseAuthService }) => {
+  it("returns 401 when JWT verification fails", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWT = async () =>
       err([{ code: "JWT_VERIFICATION_ERROR", message: "bad signature" }]);
     const app = createTestApp();
-    app.use("*", saleorPermissionsMiddleware({ joseAuthService, required: ["MANAGE_PRODUCTS"] }));
+    app.use(
+      "*",
+      saleorPermissionsMiddleware({
+        joseAuthService: joseAuthServiceProvider,
+        required: ["MANAGE_PRODUCTS"],
+      }),
+    );
     app.get("/admin", (context) => context.text("ok"));
 
     // when
@@ -88,14 +114,17 @@ describe("saleorPermissionsMiddleware", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 403 when JWT lacks a required permission", async ({ joseAuthService }) => {
+  it("returns 403 when JWT lacks a required permission", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWT = async () => ok({ permissions: ["MANAGE_ORDERS"] });
     const app = createTestApp();
     app.use(
       "*",
       saleorPermissionsMiddleware({
-        joseAuthService,
+        joseAuthService: joseAuthServiceProvider,
         required: ["MANAGE_PRODUCTS", "MANAGE_ORDERS"],
       }),
     );
@@ -110,11 +139,20 @@ describe("saleorPermissionsMiddleware", () => {
     expect(response.status).toBe(403);
   });
 
-  it("returns 403 when permissions claim is missing entirely", async ({ joseAuthService }) => {
+  it("returns 403 when permissions claim is missing entirely", async ({
+    joseAuthService,
+    joseAuthServiceProvider,
+  }) => {
     // given
     joseAuthService.verifyJWT = async () => ok({});
     const app = createTestApp();
-    app.use("*", saleorPermissionsMiddleware({ joseAuthService, required: ["MANAGE_PRODUCTS"] }));
+    app.use(
+      "*",
+      saleorPermissionsMiddleware({
+        joseAuthService: joseAuthServiceProvider,
+        required: ["MANAGE_PRODUCTS"],
+      }),
+    );
     app.get("/admin", (context) => context.text("ok"));
 
     // when

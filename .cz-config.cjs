@@ -1,4 +1,20 @@
+const { execFileSync } = require("child_process");
+
+const getTicketNumberFromBranch = () => {
+  try {
+    const branch = execFileSync("git", ["branch", "--show-current"], {
+      encoding: "utf-8",
+    }).trim();
+    const match = branch.match(/^(\d+)\//);
+
+    return match?.[1] ?? "";
+  } catch {
+    return "";
+  }
+};
+
 module.exports = {
+  fallbackTicketNumber: getTicketNumberFromBranch(),
   types: [
     { value: "feat", name: "feat:     A new feature" },
     { value: "fix", name: "fix:      A bug fix" },
